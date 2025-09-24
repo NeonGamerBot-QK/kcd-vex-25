@@ -1,3 +1,4 @@
+#include "lemlib/api.hpp" // IWYU pragma: keep
 /**
  * \file main.h
  *
@@ -78,3 +79,6 @@ void opcontrol(void);
 #endif
 
 #endif  // _PROS_MAIN_H_
+// #include "lemlib/api.hpp"
+
+#include "robodash/api.h"

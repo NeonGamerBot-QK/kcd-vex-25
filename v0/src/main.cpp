@@ -1,3 +1,4 @@
+#include "lemlib/api.hpp" // IWYU pragma: keep
 #include "main.h"
 
 /**
@@ -77,7 +78,14 @@ void opcontrol() {
 	pros::Controller master(pros::E_CONTROLLER_MASTER);
 	pros::MotorGroup left_mg({1, -2, 3});    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
 	pros::MotorGroup right_mg({-4, 5, -6});  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
-
+	bool telemToggle = true; // for switching tele output on controller screen
+pros::Task([] { // run only in competition
+		// if (field_status == "competition") {
+		// 	Gif* gif = new Gif("/usd/nokotan.gif", rd_view_obj(gifview));
+		// 	rd_view_focus(gifview);
+		// 	console.println("Launching gif...");
+		// }
+	});
 
 	while (true) {
 		pros::lcd::print(0, "%d %d %d", (pros::lcd::read_buttons() & LCD_BTN_LEFT) >> 2,
@@ -85,10 +93,28 @@ void opcontrol() {
 		                 (pros::lcd::read_buttons() & LCD_BTN_RIGHT) >> 0);  // Prints status of the emulated screen LCDs
 
 		// Arcade control scheme
-		int dir = master.get_analog(ANALOG_LEFT_Y);    // Gets amount forward/backward from left joystick
-		int turn = master.get_analog(ANALOG_RIGHT_X);  // Gets the turn left/right from right joystick
+int dir = master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
+int turn = master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
+  // Gets the turn left/right from right joystick
 		left_mg.move(dir - turn);                      // Sets left motor voltage
 		right_mg.move(dir + turn);                     // Sets right motor voltage
+			// double drivetrainTemps = ks::vector_average(leftDrive.get_temperature_all());
+			double drivetrainTemps = 100;
+		// double theta = fmod(chassis.getPose().theta, 360); // wrap to [0, 360) for user view
+		double theta = fmod(1, 360); // wrap to [0, 360) for user view
+    	if (theta < 0) {
+       		theta += 360;
+		}
+
+		if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)) {
+			telemToggle = !telemToggle; // Toggle telemetry display
+		}
+		if(!telemToggle) {
+			master.print(0, 0, "DT%.0lf|INT%.0lf|T%.0lf  ", drivetrainTemps, 0, theta);
+		} else {
+			// master.print(0, 0, "X:%.0lf Y:%.0lf T:%.0lf   ", chassis.getPose().x, chassis.getPose().y, theta);
+			master.print(0, 0, "X:%.0lf Y:%.0lf T:%.0lf   ", 0, 1, theta);
+		}
 		pros::delay(20);                               // Run for 20 ms then update
 	}
 }

@@ -1,6 +1,8 @@
 #include "lemlib/api.hpp" // IWYU pragma: keep
 #include "main.h"
 
+#include "screen/init.hpp"
+
 /**
  * A callback function for LLEMU's center button.
  *
@@ -26,7 +28,7 @@ void on_center_button() {
 void initialize() {
 	// pros::lcd::initialize();
 	// pros::lcd::set_text(1, "Hello PROS User!");
-
+	screen_init();
 	// pros::lcd::register_btn1_cb(on_center_button);
 }
 
@@ -99,7 +101,8 @@ int turn = master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
 		left_mg.move(dir - turn);                      // Sets left motor voltage
 		right_mg.move(dir + turn);                     // Sets right motor voltage
 			// double drivetrainTemps = ks::vector_average(leftDrive.get_temperature_all());
-			double drivetrainTemps = 100;
+			double drivetrainTemps =left_mg.get_temperature()
+			// left_mg.ge 
 		// double theta = fmod(chassis.getPose().theta, 360); // wrap to [0, 360) for user view
 		double theta = fmod(1, 360); // wrap to [0, 360) for user view
     	if (theta < 0) {

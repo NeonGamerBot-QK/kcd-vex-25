@@ -98,8 +98,8 @@ pros::Task([] { // run only in competition
 int dir = master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
 int turn = master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
   // Gets the turn left/right from right joystick
-		left_mg.move(dir - turn);                      // Sets left motor voltage
-		right_mg.move(dir + turn);                     // Sets right motor voltage
+		left_mg.move(dir + turn);                      // Sets left motor voltage
+		right_mg.move(dir - turn);                     // Sets right motor voltage
 			// double drivetrainTemps = ks::vector_average(leftDrive.get_temperature_all());
 			double drivetrainTemps =left_mg.get_temperature();
 			// left_mg.ge 

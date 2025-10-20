@@ -78,8 +78,8 @@ void autonomous() {}
  */
 void opcontrol() {
 	pros::Controller master(pros::E_CONTROLLER_MASTER);
-	pros::MotorGroup left_mg({1, -2, 3});    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
-	pros::MotorGroup right_mg({-4, 5, -6});  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
+	pros::MotorGroup left_mg({1, 2, 3});    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
+	pros::MotorGroup right_mg({4, 5, 6});  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
 	bool telemToggle = true; // for switching tele output on controller screen
 pros::Task([] { // run only in competition
 		// if (field_status == "competition") {
@@ -101,7 +101,7 @@ int turn = master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
 		left_mg.move(dir - turn);                      // Sets left motor voltage
 		right_mg.move(dir + turn);                     // Sets right motor voltage
 			// double drivetrainTemps = ks::vector_average(leftDrive.get_temperature_all());
-			double drivetrainTemps =left_mg.get_temperature()
+			double drivetrainTemps =left_mg.get_temperature();
 			// left_mg.ge 
 		// double theta = fmod(chassis.getPose().theta, 360); // wrap to [0, 360) for user view
 		double theta = fmod(1, 360); // wrap to [0, 360) for user view
@@ -112,6 +112,7 @@ int turn = master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
 		if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)) {
 			telemToggle = !telemToggle; // Toggle telemetry display
 		}
+		
 		if(!telemToggle) {
 			master.print(0, 0, "DT%.0lf|INT%.0lf|T%.0lf  ", drivetrainTemps, 0, theta);
 		} else {

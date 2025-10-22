@@ -81,13 +81,13 @@ void opcontrol() {
 	pros::MotorGroup left_mg({1, 2, 3});    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
 	pros::MotorGroup right_mg({4, 5, 6});  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
 	bool telemToggle = true; // for switching tele output on controller screen
-pros::Task([] { // run only in competition
+// pros::Task([] { // run only in competition
 		// if (field_status == "competition") {
 		// 	Gif* gif = new Gif("/usd/nokotan.gif", rd_view_obj(gifview));
 		// 	rd_view_focus(gifview);
 		// 	console.println("Launching gif...");
 		// }
-	});
+	// });
 
 	while (true) {
 		pros::lcd::print(0, "%d %d %d", (pros::lcd::read_buttons() & LCD_BTN_LEFT) >> 2,
@@ -95,8 +95,8 @@ pros::Task([] { // run only in competition
 		                 (pros::lcd::read_buttons() & LCD_BTN_RIGHT) >> 0);  // Prints status of the emulated screen LCDs
 
 		// Arcade control scheme
-int dir = master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
-int turn = master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
+	int dir = master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
+	int turn = master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
   // Gets the turn left/right from right joystick
 		left_mg.move(dir + turn);                      // Sets left motor voltage
 		right_mg.move(dir - turn);                     // Sets right motor voltage
@@ -119,6 +119,13 @@ int turn = master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
 			// master.print(0, 0, "X:%.0lf Y:%.0lf T:%.0lf   ", chassis.getPose().x, chassis.getPose().y, theta);
 			master.print(0, 0, "X:%.0lf Y:%.0lf T:%.0lf   ", 0, 1, theta);
 		}
-		pros::delay(20);                               // Run for 20 ms then update
+		if (master.get_analog(pros::E_CONTROLLER_APP_A)) {
+			intakeMotor.move(127); // Intake forward
+		} else if (master.get_analog(pros::E_CONTROLLER_APP_B)) {
+			intakeMotor.move(-127); // Intake backward
+		} else {
+			intakeMotor.move(0); // Intake stop
+		}
+		pros::delay(20);               // Run for 20 ms then update
 	}
 }

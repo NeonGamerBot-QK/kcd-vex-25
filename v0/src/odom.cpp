@@ -4,6 +4,16 @@ constexpr double WHEEL_DIAMETER_IN = 2.75;   // inches (tracking wheels)
 constexpr double TRACK_WIDTH_IN   = 10.0;   // inches between left and right tracking wheels
 constexpr double PI = 3.14159265358979323846;
 constexpr int    ODOM_LOOP_MS     = 11;     // update rate
+
+static pros::Rotation leftRot(1);
+static pros::Rotation rightRot(2);
+
+static double g_x = 0.0;
+static double g_y = 0.0;
+static double g_theta = 0.0;
+static double prevLeftDist = 0.0;
+static double prevRightDist = 0.0;
+
 static double degToInches(double deg) {
   return (deg / 360.0) * (PI * WHEEL_DIAMETER_IN);
 }

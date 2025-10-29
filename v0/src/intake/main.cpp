@@ -13,4 +13,3 @@ intakeMotor.move(-127);
 void intakeStop() {
 intakeMotor.move(0);
 }
-

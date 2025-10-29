@@ -4,6 +4,7 @@
 #include "screen/init.hpp"
 
 extern pros::Motor intakeMotor;
+void startOdometryTask();
 
 /**
  * A callback function for LLEMU's center button.
@@ -28,10 +29,8 @@ void on_center_button() {
  * to keep execution time for this mode under a few seconds.
  */
 void initialize() {
-	// pros::lcd::initialize();
-	// pros::lcd::set_text(1, "Hello PROS User!");
 	screen_init();
-	// pros::lcd::register_btn1_cb(on_center_button);
+	startOdometryTask();
 }
 
 /**
@@ -80,7 +79,7 @@ void autonomous() {}
  */
 void opcontrol() {
 	pros::Controller master(pros::E_CONTROLLER_MASTER);
-	pros::MotorGroup left_mg({1, 2, 3});    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
+	pros::MotorGroup left_mg({-1,-2,-3});    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
 	pros::MotorGroup right_mg({4, 5, 6});  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
 	bool telemToggle = true; // for switching tele output on controller screen
 	// pros::Task([] { // run only in competition
@@ -92,23 +91,16 @@ void opcontrol() {
 	// });
 
 	while (true) {
-		pros::lcd::print(0, "%d %d %d", (pros::lcd::read_buttons() & LCD_BTN_LEFT) >> 2,
-		                 (pros::lcd::read_buttons() & LCD_BTN_CENTER) >> 1,
-		                 (pros::lcd::read_buttons() & LCD_BTN_RIGHT) >> 0);  // Prints status of the emulated screen LCDs
-
-		// Arcade control scheme
-	int dir = master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
-	int turn = master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
-  // Gets the turn left/right from right joystick
-		left_mg.move(dir + turn);                      // Sets left motor voltage
-		right_mg.move(dir - turn);                     // Sets right motor voltage
-			// double drivetrainTemps = ks::vector_average(leftDrive.get_temperature_all());
-			double drivetrainTemps =left_mg.get_temperature();
-			// left_mg.ge 
-		// double theta = fmod(chassis.getPose().theta, 360); // wrap to [0, 360) for user view
-		double theta = fmod(1, 360); // wrap to [0, 360) for user view
-    	if (theta < 0) {
-       		theta += 360;
+		int dir = master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y);
+		int turn = master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
+		
+		left_mg.move(dir + turn);
+		right_mg.move(dir - turn);
+		
+		double drivetrainTemps = left_mg.get_temperature();
+		double theta = fmod(1, 360);
+		if (theta < 0) {
+			theta += 360;
 		}
 
 		if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)) {

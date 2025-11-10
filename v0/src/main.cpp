@@ -58,7 +58,7 @@ void opcontrol() {
 	bool telemToggle = true;
 
 	while (true) {
-		int dir = master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y);
+		int dir = master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
 		int turn = -master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
 		
 		left_mg.move(dir + turn);

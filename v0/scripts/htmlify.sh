@@ -25,7 +25,7 @@ FILE_OVERRIDES["./src/screen/pl_mpeg.c"]="<p>This file has been omitted as it is
 OUTPUT="index.html"
 
 # Header
-cat <<EOF > $OUTPUT
+cat << EOF > $OUTPUT
 <!DOCTYPE html>
 <html>
 <head>
@@ -129,7 +129,7 @@ for FILE in ${FILES[@]}; do
 done
 
 # Footer
-cat <<EOF >> $OUTPUT
+cat << EOF >> $OUTPUT
   <!-- PrismJS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>

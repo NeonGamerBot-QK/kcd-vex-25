@@ -8,9 +8,12 @@ double odom_get_y();
 double odom_get_theta_deg();
 
 rd_view_t *homeview = rd_view_create("Home");
+rd_view_t *selector_view = rd_view_create("Auton Select");
 static lv_obj_t *stat_label = nullptr;
 static lv_obj_t *map_canvas = nullptr;
 static lv_obj_t *position_label = nullptr;
+
+int selected_auton = 0;
 
 static void draw_field_map(lv_obj_t *canvas) {
 	lv_canvas_fill_bg(canvas, lv_color_hex(0x404040), LV_OPA_COVER);
@@ -127,7 +130,52 @@ void auton_screen_init() {
 	rd_view_alert(homeview, "Auton Mode");
 }
 
+void init_auton_selector() {
+	rd_view_t *selector = selector_view;
+	
+	lv_obj_t *selector_label = lv_label_create(rd_view_obj(selector));
+	lv_label_set_text(selector_label, "Select Autonomous:");
+	lv_obj_align(selector_label, LV_ALIGN_TOP_MID, 0, 20);
+	
+	const char* auton_names[] = {
+		"Move forward", 
+		"Do nothing",
+		"Blue side",
+		"Red side",
+		"Skills!"
+	};
+	
+	lv_obj_t *btn_container = lv_obj_create(rd_view_obj(selector));
+	lv_obj_set_size(btn_container, 400, 180);
+	lv_obj_align(btn_container, LV_ALIGN_CENTER, 0, 20);
+	lv_obj_set_flex_flow(btn_container, LV_FLEX_FLOW_ROW_WRAP);
+	lv_obj_set_flex_align(btn_container, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+	
+	for (int i = 0; i < 6; i++) {
+		lv_obj_t *btn = lv_btn_create(btn_container);
+		lv_obj_set_size(btn, 180, 50);
+		lv_obj_add_event_cb(btn, [](lv_event_t *e) {
+			int auton_idx = (int)(intptr_t)lv_event_get_user_data(e);
+			selected_auton = auton_idx;
+			rd_view_focus(homeview);
+		}, LV_EVENT_CLICKED, (void*)(intptr_t)i);
+		
+		lv_obj_t *label = lv_label_create(btn);
+		lv_label_set_text(label, auton_names[i]);
+		lv_obj_center(label);
+	}
+	
+	lv_obj_t *selected_label = lv_label_create(rd_view_obj(selector));
+	lv_label_set_text(selected_label, "Current: None");
+	lv_obj_align(selected_label, LV_ALIGN_BOTTOM_MID, 0, -10);
+}
+
+int get_selected_auton() {
+	return selected_auton;
+}
+
 void screen_init() {
+	init_auton_selector();
 	init_homeview();
-	rd_view_focus(homeview);
+	rd_view_focus(selector_view);
 }

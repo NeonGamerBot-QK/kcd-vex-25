@@ -48,3 +48,11 @@ void turnRight(int speed, int duration_ms) {
 	left_mg.move(0);
 	right_mg.move(0);
 }
+
+void autonMoveForward() {
+	moveForward(127, 1000);
+	// end;
+}
+void autonBlue(){
+	
+}

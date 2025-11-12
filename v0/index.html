@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>My Project</title>
+
+  <!-- PrismJS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-coy.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" />
+
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 8px;
+      font-size: 0.75rem;
+    }
+
+    pre {
+      margin: 0;
+    }
+
+    code {
+      font-family: monospace;
+    }
+
+    h1 {
+      margin-top: 1rem;
+      margin-bottom: 0.25rem;
+    }
+
+    p {
+      margin-top: 0.25rem;
+      margin-bottom: 0.25rem;
+    }
+
+    pre[class*="language-"],
+    code[class*="language-"] {
+      max-height: inherit !important;
+      overflow: hidden !important;
+
+      box-shadow: none !important;
+      border-left: none !important;
+    }
+
+    code[class*="language"] {
+      overflow: hidden !important;
+      font-size: 0.75rem;
+    }
+  }
+  </style>
+</head>
+<body>
+<h2 id="readme-here">Readme here</h2>
+<hr>
+<h1>./src/main.cpp</h1>
+<p><strong>Last commit:</strong> <a href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/4716ed75c14647259ed9433435e654b23f859211>fix: acl  (2025-11-10)</a></p>
+<pre class="line-numbers language-cpp" style="white-space: pre-wrap;"><code>#include &quot;lemlib/api.hpp&quot; // IWYU pragma: keep
+#include &quot;main.h&quot;
+
+#include &quot;screen/init.hpp&quot;
+#include &quot;auton/movement.hpp&quot;
+#include &quot;intake/pneumatics.hpp&quot;
+
+extern pros::Motor intakeMotor;
+void startOdometryTask();
+
+/**
+ * Runs initialization code. This occurs as soon as the program is started.
+ *
+ * All other competition modes are blocked by initialize; it is recommended
+ * to keep execution time for this mode under a few seconds.
+ */
+void initialize() {
+	screen_init();
+	startOdometryTask();
+}
+
+/**
+ * Runs while the robot is in the disabled state of Field Management System or
+ * the VEX Competition Switch, following either autonomous or opcontrol. When
+ * the robot is enabled, this task will exit.
+ */
+void disabled() {}
+
+/**
+ * Runs after initialize(), and before autonomous when connected to the Field
+ * Management System or the VEX Competition Switch. This is intended for
+ * competition-specific initialization routines, such as an autonomous selector
+ * on the LCD.
+ *
+ * This task will exit when the robot is enabled and autonomous or opcontrol
+ * starts.
+ */
+void competition_initialize() {}
+
+void autonomous() {
+	int auton = get_selected_auton();
+	
+	switch(auton) {
+	case 0:
+		autonMoveForward();
+	break;
+	case 1:
+	break;
+}
+	
+}
+
+
+/**
+ * Runs the operator control code. This function will be started in its own task
+ * with the default priority and stack size whenever the robot is enabled via
+ * the Field Management System or the VEX Competition Switch in the operator
+ * control mode.
+ *
+ * If no competition control is connected, this function will run immediately
+ * following initialize().
+ *
+ * If the robot is disabled or communications is lost, the
+ * operator control task will be stopped. Re-enabling the robot will restart the
+ * task, not resume it from where it left off.
+ */
+void opcontrol() {
+	pros::Controller master(pros::E_CONTROLLER_MASTER);
+	pros::MotorGroup left_mg({2, 4, 6});
+	pros::MotorGroup right_mg({-1, -15, -3});
+	bool telemToggle = true;
+
+	while (true) {
+		int dir = master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
+		int turn = -master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
+		
+		left_mg.move(dir + turn);
+		right_mg.move(dir - turn);
+		
+		double drivetrainTemps = left_mg.get_temperature();
+		double theta = fmod(1, 360);
+		if (theta &lt; 0) {
+			theta += 360;
+		}
+
+		if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)) {
+			telemToggle = !telemToggle; // Toggle telemetry display
+			toggleIntakeLift();
+		}
+		
+		if(!telemToggle) {
+			master.print(0, 0, &quot;DT%.0lf|INT%.0lf|T%.0lf  &quot;, drivetrainTemps, 0, theta);
+		} else {
+			// master.print(0, 0, &quot;X:%.0lf Y:%.0lf T:%.0lf   &quot;, chassis.getPose().x, chassis.getPose().y, theta);
+			master.print(0, 0, &quot;X:%.0lf Y:%.0lf T:%.0lf   &quot;, 0, 1, theta);
+		}
+		if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
+			intakeMotor.move(127); // Intake forward
+		} else if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) {
+			intakeMotor.move(-127); // Intake backward
+		} else {
+			intakeMotor.move(0); // Intake stop
+		}
+
+		pros::delay(20);               // Run for 20 ms then update
+	}
+}</code></pre><h1>./src/odom.cpp</h1>
+<p><strong>Last commit:</strong> <a href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/d356ee9b1ef962d7fd666a3f9395ff9314c100a4>update: pushing incase i screw up the drive train (2025-10-29)</a></p>
+<pre class="line-numbers language-cpp" style="white-space: pre-wrap;"><code>#include &quot;main.h&quot;
+// ----------------- CONFIG -----------------
+constexpr double WHEEL_DIAMETER_IN = 2.75;   // inches (tracking wheels)
+constexpr double TRACK_WIDTH_IN   = 10.0;   // inches between left and right tracking wheels
+constexpr double PI = 3.14159265358979323846;
+constexpr int    ODOM_LOOP_MS     = 11;     // update rate
+
+static pros::Rotation leftRot(1);
+static pros::Rotation rightRot(2);
+
+static double g_x = 0.0;
+static double g_y = 0.0;
+static double g_theta = 0.0;
+static double prevLeftDist = 0.0;
+static double prevRightDist = 0.0;
+
+static double degToInches(double deg) {
+  return (deg / 360.0) * (PI * WHEEL_DIAMETER_IN);
+}
+
+
+void resetOdometry(double x = 0.0, double y = 0.0, double theta_rad = 0.0) {
+  // read current raw encoder positions
+  double leftDeg  = leftRot.get_position();
+  double rightDeg = rightRot.get_position();
+
+  // convert to inches and set previous readings so first update delta = 0
+  prevLeftDist  = degToInches(leftDeg);
+  prevRightDist = degToInches(rightDeg);
+
+  // set global pose
+  g_x = x;
+  g_y = y;
+  g_theta = theta_rad;
+}
+
+double odom_get_x() { return g_x; }
+double odom_get_y() { return g_y; }
+double odom_get_theta() { return g_theta; }           // radians
+double odom_get_theta_deg() { return g_theta * 180.0 / PI; }
+
+// ---------------- ODOM TASK ----------------
+void odom_task_fn(void* /*param*/) {
+  // seed prev values on first run if not already seeded
+  if (prevLeftDist == 0.0 &amp;&amp; prevRightDist == 0.0) {
+    double ldeg = leftRot.get_position();
+    double rdeg = rightRot.get_position();
+    prevLeftDist  = degToInches(ldeg);
+    prevRightDist = degToInches(rdeg);
+  }
+
+  while (true) {
+    // read current encoder positions (degrees -&gt; inches)
+    double leftDist  = degToInches(leftRot.get_position());
+    double rightDist = degToInches(rightRot.get_position());
+
+    // deltas since last loop
+    double dL = leftDist  - prevLeftDist;
+    double dR = rightDist - prevRightDist;
+
+    // save for next loop
+    prevLeftDist  = leftDist;
+    prevRightDist = rightDist;
+
+    // change in heading (radians)
+    double dTheta = (dR - dL) / TRACK_WIDTH_IN;
+
+    // distance along robot center
+    double dCenter = (dR + dL) / 2.0;
+
+    // use mid-rotation approximation for better accuracy during turns
+    double thetaMid = g_theta + dTheta / 2.0;
+
+    // convert robot-forward motion into field frame
+    double dxField = dCenter * cos(thetaMid);
+    double dyField = dCenter * sin(thetaMid);
+
+    // update global pose
+    g_x += dxField;
+    g_y += dyField;
+    g_theta += dTheta;
+
+    // normalize theta to [-PI, PI] (optional)
+    if (g_theta &gt; PI)  g_theta -= 2.0 * PI;
+    if (g_theta &lt; -PI) g_theta += 2.0 * PI;
+
+    pros::delay(ODOM_LOOP_MS);
+  }
+}
+
+// ---------------- START TASK ----------------
+// call this from initialize() or competition_initialize()
+void startOdometryTask() {
+  static pros::Task odomTask(odom_task_fn, nullptr, TASK_PRIORITY_DEFAULT);
+}</code></pre><h1>./src/auton/movement.cpp</h1>
+<p><strong>Last commit:</strong> <a href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/0460e1560426e64045b4833c63c67ba00da1ef55>fix: drivetrain (2025-11-10)</a></p>
+<pre class="line-numbers language-cpp" style="white-space: pre-wrap;"><code>#include &quot;main.h&quot;
+#include &quot;auton/movement.hpp&quot;
+
+void moveForward(int speed, int duration_ms) {
+	pros::MotorGroup left_mg({-1, -2, -3});
+	pros::MotorGroup right_mg({4, 5, 6});
+	
+	left_mg.move(speed);
+	right_mg.move(speed);
+	pros::delay(duration_ms);
+	
+	left_mg.move(0);
+	right_mg.move(0);
+}
+
+void moveBackward(int speed, int duration_ms) {
+	pros::MotorGroup left_mg({-1, -2, -3});
+	pros::MotorGroup right_mg({4, 5, 6});
+	
+	left_mg.move(-speed);
+	right_mg.move(-speed);
+	pros::delay(duration_ms);
+	
+	left_mg.move(0);
+	right_mg.move(0);
+}
+
+void turnLeft(int speed, int duration_ms) {
+	pros::MotorGroup left_mg({-1, -2, -3});
+	pros::MotorGroup right_mg({4, 5, 6});
+	
+	left_mg.move(-speed);
+	right_mg.move(speed);
+	pros::delay(duration_ms);
+	
+	left_mg.move(0);
+	right_mg.move(0);
+}
+
+void turnRight(int speed, int duration_ms) {
+	pros::MotorGroup left_mg({-1, -2, -3});
+	pros::MotorGroup right_mg({4, 5, 6});
+	
+	left_mg.move(speed);
+	right_mg.move(-speed);
+	pros::delay(duration_ms);
+	
+	left_mg.move(0);
+	right_mg.move(0);
+}
+
+void autonMoveForward() {
+	moveForward(127, 1000);
+	// end;
+}
+void autonBlue(){
+	
+}
+</code></pre><h1>./src/intake/main.cpp</h1>
+<p><strong>Last commit:</strong> <a href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/d356ee9b1ef962d7fd666a3f9395ff9314c100a4>update: pushing incase i screw up the drive train (2025-10-29)</a></p>
+<pre class="line-numbers language-cpp" style="white-space: pre-wrap;"><code>#include &quot;main.h&quot;
+
+pros::Motor intakeMotor(7);
+
+void intakeForward() {
+intakeMotor.move(127);
+}
+
+void intakeBackward() {
+intakeMotor.move(-127);
+}
+
+void intakeStop() {
+intakeMotor.move(0);
+}
+</code></pre><h1>./src/intake/pneumatics.cpp</h1>
+<p><strong>Last commit:</strong> <a href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/></a></p>
+<pre class="line-numbers language-cpp" style="white-space: pre-wrap;"><code>#include &quot;main.h&quot;
+#define DIGITAL_SENSOR_PORT &#39;A&#39;
+bool lastPistonValue = false;
+pros::ADIDigitalOut piston (DIGITAL_SENSOR_PORT);
+void toggleIntakeLift() {
+lastPistonValue = !lastPistonValue;
+  piston.set_value(lastPistonValue);
+}
+void stopPiston() {
+    lastPistonValue = false;
+    piston.set_value(false);
+}
+void startPiston() {
+    lastPistonValue = true;
+    piston.set_value(true);
+}</code></pre><h1>./src/screen/init.cpp</h1>
+<p><strong>Last commit:</strong> <a href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/d356ee9b1ef962d7fd666a3f9395ff9314c100a4>update: pushing incase i screw up the drive train (2025-10-29)</a></p>
+<pre class="line-numbers language-cpp" style="white-space: pre-wrap;"><code>#include &quot;robodash/api.h&quot;
+#include &quot;main.h&quot;
+
+extern pros::Motor intakeMotor;
+
+double odom_get_x();
+double odom_get_y();
+double odom_get_theta_deg();
+
+rd_view_t *homeview = rd_view_create(&quot;Home&quot;);
+rd_view_t *selector_view = rd_view_create(&quot;Auton Select&quot;);
+static lv_obj_t *stat_label = nullptr;
+static lv_obj_t *map_canvas = nullptr;
+static lv_obj_t *position_label = nullptr;
+
+int selected_auton = 0;
+
+static void draw_field_map(lv_obj_t *canvas) {
+	lv_canvas_fill_bg(canvas, lv_color_hex(0x404040), LV_OPA_COVER);
+	
+	lv_draw_rect_dsc_t rect_dsc;
+	lv_draw_rect_dsc_init(&amp;rect_dsc);
+	rect_dsc.bg_color = lv_color_hex(0x808080);
+	rect_dsc.border_color = lv_color_white();
+	rect_dsc.border_width = 2;
+	
+	lv_canvas_draw_rect(canvas, 5, 5, 200, 200, &amp;rect_dsc);
+	
+	lv_draw_line_dsc_t line_dsc;
+	lv_draw_line_dsc_init(&amp;line_dsc);
+	line_dsc.color = lv_color_hex(0x606060);
+	line_dsc.width = 1;
+	
+	lv_point_t h_line[] = {{5, 105}, {205, 105}};
+	lv_canvas_draw_line(canvas, h_line, 2, &amp;line_dsc);
+	lv_point_t v_line[] = {{105, 5}, {105, 205}};
+	lv_canvas_draw_line(canvas, v_line, 2, &amp;line_dsc);
+}
+
+static void draw_robot_position(lv_obj_t *canvas, double x, double y, double theta) {
+	int map_x = 105 + (int)(x * 1.5);
+	int map_y = 105 - (int)(y * 1.5);
+	
+	map_x = (map_x &lt; 5) ? 5 : (map_x &gt; 205) ? 205 : map_x;
+	map_y = (map_y &lt; 5) ? 5 : (map_y &gt; 205) ? 205 : map_y;
+	
+	lv_draw_rect_dsc_t robot_dsc;
+	lv_draw_rect_dsc_init(&amp;robot_dsc);
+	robot_dsc.bg_color = lv_color_hex(0x00FF00);
+	robot_dsc.radius = LV_RADIUS_CIRCLE;
+	
+	lv_canvas_draw_rect(canvas, map_x - 5, map_y - 5, 10, 10, &amp;robot_dsc);
+	
+	int dir_x = map_x + (int)(10 * cos(theta * 3.14159 / 180.0));
+	int dir_y = map_y - (int)(10 * sin(theta * 3.14159 / 180.0));
+	
+	lv_draw_line_dsc_t dir_dsc;
+	lv_draw_line_dsc_init(&amp;dir_dsc);
+	dir_dsc.color = lv_color_hex(0xFF0000);
+	dir_dsc.width = 2;
+	
+	lv_point_t dir_line[] = {{(lv_coord_t)map_x, (lv_coord_t)map_y}, {(lv_coord_t)dir_x, (lv_coord_t)dir_y}};
+	lv_canvas_draw_line(canvas, dir_line, 2, &amp;dir_dsc);
+}
+
+void update_stats_task(void* param) {
+	static lv_color_t cbuf[LV_CANVAS_BUF_SIZE_TRUE_COLOR(210, 210)];
+	if (map_canvas != nullptr) {
+		lv_canvas_set_buffer(map_canvas, cbuf, 210, 210, LV_IMG_CF_TRUE_COLOR);
+	}
+	
+	while (true) {
+		if (stat_label != nullptr) {
+			double battery = pros::battery::get_capacity();
+			double dt_temp_left = 0.0;
+			double intake_temp = intakeMotor.get_temperature();
+			
+			char buf[256];
+			snprintf(buf, sizeof(buf), 
+				&quot;Battery: %.0f%%\n&quot;
+				&quot;DT Temp: %.0fC\n&quot;
+				&quot;Intake: %.0fC\n&quot;
+				&quot;Mode: %s&quot;,
+				battery,
+				dt_temp_left,
+				intake_temp,
+				pros::competition::is_autonomous() ? &quot;Auto&quot; : &quot;Driver&quot;
+			);
+			lv_label_set_text(stat_label, buf);
+			
+			double x = odom_get_x();
+			double y = odom_get_y();
+			double theta = odom_get_theta_deg();
+			
+			if (position_label != nullptr) {
+				char pos_buf[128];
+				snprintf(pos_buf, sizeof(pos_buf), &quot;X: %.1f  Y: %.1f\nHeading: %.0f°&quot;, x, y, theta);
+				lv_label_set_text(position_label, pos_buf);
+			}
+			
+			if (map_canvas != nullptr) {
+				draw_field_map(map_canvas);
+				draw_robot_position(map_canvas, x, y, theta);
+			}
+		}
+		pros::delay(100);
+	}
+}
+
+void screen_deinit() {
+	rd_view_del(homeview);
+}
+
+void init_homeview() {
+	stat_label = lv_label_create(rd_view_obj(homeview));
+	lv_label_set_text(stat_label, &quot;Waiting for Competition...&quot;);
+	lv_obj_align(stat_label, LV_ALIGN_LEFT_MID, 10, -30);
+	
+	map_canvas = lv_canvas_create(rd_view_obj(homeview));
+	lv_obj_align(map_canvas, LV_ALIGN_RIGHT_MID, -10, 0);
+	
+	position_label = lv_label_create(rd_view_obj(homeview));
+	lv_label_set_text(position_label, &quot;X: 0.0  Y: 0.0\nHeading: 0°&quot;);
+	lv_obj_align(position_label, LV_ALIGN_LEFT_MID, 10, 30);
+	
+	static pros::Task stats_task(update_stats_task, nullptr, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, &quot;Stats&quot;);
+}
+
+void auton_screen_init() {
+	rd_view_alert(homeview, &quot;Auton Mode&quot;);
+}
+
+void init_auton_selector() {
+	rd_view_t *selector = selector_view;
+	
+	lv_obj_t *selector_label = lv_label_create(rd_view_obj(selector));
+	lv_label_set_text(selector_label, &quot;Select Autonomous:&quot;);
+	lv_obj_align(selector_label, LV_ALIGN_TOP_MID, 0, 20);
+	
+	const char* auton_names[] = {
+		&quot;Move forward&quot;, 
+		&quot;Do nothing&quot;,
+		&quot;Blue side&quot;,
+		&quot;Red side&quot;,
+		&quot;Skills!&quot;
+	};
+	
+	lv_obj_t *btn_container = lv_obj_create(rd_view_obj(selector));
+	lv_obj_set_size(btn_container, 400, 180);
+	lv_obj_align(btn_container, LV_ALIGN_CENTER, 0, 20);
+	lv_obj_set_flex_flow(btn_container, LV_FLEX_FLOW_ROW_WRAP);
+	lv_obj_set_flex_align(btn_container, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+	
+	for (int i = 0; i &lt; 6; i++) {
+		lv_obj_t *btn = lv_btn_create(btn_container);
+		lv_obj_set_size(btn, 180, 50);
+		lv_obj_add_event_cb(btn, [](lv_event_t *e) {
+			int auton_idx = (int)(intptr_t)lv_event_get_user_data(e);
+			selected_auton = auton_idx;
+			rd_view_focus(homeview);
+		}, LV_EVENT_CLICKED, (void*)(intptr_t)i);
+		
+		lv_obj_t *label = lv_label_create(btn);
+		lv_label_set_text(label, auton_names[i]);
+		lv_obj_center(label);
+	}
+	
+	lv_obj_t *selected_label = lv_label_create(rd_view_obj(selector));
+	lv_label_set_text(selected_label, &quot;Current: None&quot;);
+	lv_obj_align(selected_label, LV_ALIGN_BOTTOM_MID, 0, -10);
+}
+
+int get_selected_auton() {
+	return selected_auton;
+}
+
+void screen_init() {
+	init_auton_selector();
+	init_homeview();
+	rd_view_focus(selector_view);
+}
+</code></pre><h1>./scripts/compile_to_tex.py</h1>
+<p><strong>Last commit:</strong> <a href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/62ee70f4391a03f057c4632519155770e5ccdb59>add: modules, modules (2025-09-24)</a></p>
+<pre class="line-numbers language-py" style="white-space: pre-wrap;"><code>from pathlib import Path
+import zipfile
+from shutil import copy, rmtree
+import os
+
+# Function which zips the given &#39;path&#39; to the &#39;ziph&#39;
+def zipdir(path, ziph):
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            ziph.write(os.path.join(root, file))
+
+# main function
+def main():
+    if Path(&#39;project.pros&#39;).exists():
+        print(&quot;\033[92m&quot; + &quot;FOUND PROJECT FILE &quot; + u&quot;\u2193&quot; + &quot;\033[0m&quot;)
+        root = Path(&#39;project.pros&#39;)
+        root_array = root.cwd().parts
+        PROJECT_NAME = root_array[-1]
+        ROOT_START = len(root_array)
+
+    try:
+        print((&quot;\033[95m&quot; + str(root) + &quot; | &quot; + str(type(root)) + &quot;\033[0m&quot;))
+    except:
+        print(&quot;\033[91m&quot; + &quot;Please navigate to the root directory of the PROS project&quot; + &quot;\033[0m&quot;)
+        print(&quot;\033[93m&quot; + &quot;Need help setting up? See: https://github.com/Udit8348/Hard-Copy#setup&quot; + &quot;\033[0m&quot;)
+        return -1
+
+    try:
+        # create a temp directory to store all the tex files we want to print
+        zip_source = root.cwd()  / &quot;output&quot;
+        zip_source.mkdir(parents=True, exist_ok=True)
+    except FileExistsError as e:
+        print(e)
+
+    try:
+        # create a permanent directory to store all the files we want to print
+        docs_dest = root.cwd()  / &quot;website&quot;
+        docs_dest.mkdir(parents=True, exist_ok=True)
+    except FileExistsError as e:
+        # If the directory already exists, skip creating a new one
+        print(&quot;Docs directory already exists at: &quot; + e)
+
+    # Create the path to a wrapper.tex file
+    wrapper_dest = zip_source / &quot;wrapper.tex&quot;
+    wrapper_dest.touch(exist_ok=True)
+    with wrapper_dest.open(mode=&#39;w&#39;) as f:
+        # Recursively search the entire project for any relevant source files
+        f.write(&quot;%%---------------------\n&quot;)
+        f.write(&quot;\\AddToHook{cmd/section/before}{\clearpage}\n&quot;)
+        f.write(&quot;\\section{Driver Code}\n\n&quot;)
+        for source in root.cwd().glob(&#39;**/*.c*&#39;):
+            # break source into components starting from the root
+            components = source.parts[ROOT_START:]
+
+            &#39;&#39;&#39;
+                It is good practice to only have .c and .cpp files in src
+                PROS projects may contain .c image arrays or .csv files but
+                those should be organized outside of src directory
+            &#39;&#39;&#39;
+            if(not &#39;src&#39; in components
+            or (&#39;src&#39; and &#39;auton&#39;) in components
+            or (&#39;src&#39; and &#39;libKS&#39;) in components):
+                continue
+
+            # Build a relative unix path for Overleaf to find the source files
+            rel_src_path = &quot;&quot;
+            for i in range(0, len(components)-1):
+                rel_src_path += components[i] + &quot;/&quot;
+            name = components[-1]
+            rel_src_path += name
+            copy(source, zip_source)
+
+            # Generate LaTeX code for any valid source file
+            f.write(&quot;\\subsection{&quot; + rel_src_path + &quot;}\n&quot;)
+            f.write(&quot;\\inputminted[linenos,tabsize=2,breaklines,frame=lines,framesep=3mm,bgcolor=LightGray]{c}{&quot; + name + &quot;}\n&quot;)
+            f.write(&quot;\\pagebreak\n\n&quot;)
+
+        # Recursively search the entire project for any relevant autonomous files
+        f.write(&quot;%%---------------------\n&quot;)
+        f.write(&quot;\\section{Autonomous Code}\n\n&quot;)
+        for source in root.cwd().glob(&#39;**/*.c*&#39;):
+            # break source into components starting from the root
+            components = source.parts[ROOT_START:]
+
+            &#39;&#39;&#39;
+                It is good practice to only have .c and .cpp files in src
+                PROS projects may contain .c image arrays or .csv files but
+                those should be organized outside of src directory
+            &#39;&#39;&#39;
+            if(not &#39;auton&#39; in components
+            or &#39;.d&#39; in components
+            or &#39;bin&#39; in components):
+                continue
+
+            # Build a relative unix path for Overleaf to find the source files
+            rel_src_path = &quot;&quot;
+            for i in range(0, len(components)-1):
+                rel_src_path += components[i] + &quot;/&quot;
+            name = components[-1]
+            rel_src_path += name
+            copy(source, zip_source)
+
+            # Generate LaTeX code for any valid source file
+            f.write(&quot;\\subsection{&quot; + rel_src_path + &quot;}\n&quot;)
+            f.write(&quot;\\inputminted[linenos,tabsize=2,breaklines,frame=lines,framesep=3mm,bgcolor=LightGray]{c}{&quot; + name + &quot;}\n&quot;)
+            f.write(&quot;\\pagebreak\n\n&quot;)
+
+        # Recursively search the entire project for any relevant libstrait files
+        f.write(&quot;%%---------------------\n&quot;)
+        f.write(&quot;\\section{libKS}\n\n&quot;)
+        for source in root.cwd().glob(&#39;**/*.c*&#39;):
+            # break source into components starting from the root
+            components = source.parts[ROOT_START:]
+
+            &#39;&#39;&#39;
+                It is good practice to only have .c and .cpp files in src
+                PROS projects may contain .c image arrays or .csv files but
+                those should be organized outside of src directory
+            &#39;&#39;&#39;
+            if(not &#39;libKS&#39; in components
+            or &#39;.d&#39; in components
+            or &#39;bin&#39; in components):
+                continue
+
+            # Build a relative unix path for Overleaf to find the source files
+            rel_src_path = &quot;&quot;
+            for i in range(0, len(components)-1):
+                rel_src_path += components[i] + &quot;/&quot;
+            name = components[-1]
+            rel_src_path += name
+            copy(source, zip_source)
+
+            # Generate LaTeX code for any valid source file
+            f.write(&quot;\\subsection{&quot; + rel_src_path + &quot;}\n&quot;)
+            f.write(&quot;\\inputminted[linenos,tabsize=2,breaklines,frame=lines,framesep=3mm,bgcolor=LightGray]{c}{&quot; + name + &quot;}\n&quot;)
+            f.write(&quot;\\pagebreak\n\n&quot;)
+
+        # Recursively search the entire project for any header files
+        f.write(&quot;%%---------------------\n&quot;)
+        f.write(&quot;\\section{Header Files}\n\n&quot;)
+        for header in root.cwd().glob(&#39;**/*.h*&#39;):
+            # break header into components starting from the root
+            components = header.parts[ROOT_START:]
+
+            # Exclude default PROS headers and restrict search to sub-directories of include/
+            # It is good convention to keep all your header files in include/
+            # Sub directories within include/ will still be found
+            if(&#39;api.h&#39; in components
+            or (&#39;include&#39; and &#39;libKS&#39;) in components
+            or (&#39;include&#39; and &#39;main.h&#39;) in components
+            or (&#39;include&#39; and &#39;liblvgl&#39;) in components
+            or (&#39;include&#39; and &#39;display&#39;) in components
+            or (&#39;include&#39; and &#39;okapi&#39;) in components
+
+            or (&#39;include&#39; and &#39;gif-pros&#39;) in components
+            or (&#39;include&#39; and &#39;lemlib&#39;) in components
+            or (&#39;include&#39; and &#39;fmt&#39;) in components
+            or (&#39;include&#39; and &#39;robodash&#39;) in components
+            or (&#39;include&#39; and &#39;catLib&#39;) in components
+
+            or (&#39;include&#39; and &#39;pros&#39;) in components
+            or (&#39;include&#39; and &#39;output&#39;) in components
+
+            or (&#39;docs&#39; and &#39;index.html&#39;) in components
+            or (&#39;docs&#39; and &#39;PROS&#39;) in components
+
+            or &#39;cquery_cached_index&#39; in components
+            or (not &#39;include&#39;) in components
+            or &#39;.cache&#39; in components
+            or &#39;.vscode&#39; in components):
+                continue
+
+            # Build a relative unix path for Overleaf to find the includes
+            rel_header_path = &quot;&quot;
+            for i in range(0, len(components)-1):
+                rel_header_path += components[i] + &quot;/&quot;
+            name = components[-1]
+            rel_header_path += name
+            copy(header, zip_source)
+
+            # Generate LaTeX code for any valid header
+            # Write it to the &#39;Code&#39; LaTeX file
+            f.write(&quot;\\subsection{&quot; + rel_header_path + &quot;}\n&quot;)
+            f.write(&quot;\\inputminted[linenos,tabsize=2,breaklines,frame=lines,framesep=3mm,bgcolor=LightGray]{c}{&quot; + name + &quot;}\n&quot;)
+            f.write(&quot;\\pagebreak\n\n&quot;)
+
+    # Create the path to a main.tex file and insert boilerplate tex code
+    main_dest = zip_source / &quot;main.tex&quot;
+    main_dest.touch(exist_ok=True)
+    with main_dest.open(&quot;w&quot;) as f:
+        f.write(r&quot;&quot;&quot;% !TEX program = xelatex
+\documentclass[12pt, letterpaper]{article}
+\usepackage[margin=0.8in]{geometry}
+\usepackage{datetime2}
+\usepackage{url}
+
+\usepackage{minted2}
+\usepackage{fontspec}
+\usepackage{xcolor}
+\usepackage{graphicx}
+
+\usepackage{titlepic}
+\usepackage{titling}
+\usepackage{hyperref}
+
+\hypersetup{
+     colorlinks=true, 
+     urlcolor=cyan,
+}
+
+\definecolor{LightGray}{gray}{0.9}
+\usemintedstyle{friendly}
+\setmainfont{Comfortaa}
+\setmonofont{DejaVu Sans}
+
+\pretitle{\begin{center}\fontsize{40bp}{40bp}\selectfont}
+    \posttitle{\vspace{14bp}\par\includegraphics[width=100mm]{logo}\par\end{center}}
+\preauthor{\begin{center}\fontsize{14bp}{14bp}\selectfont}
+    \postauthor{\par\end{center}}
+\predate{\begin{center}}
+    \postdate{\par\end{center}}
+
+\title{\textbf{210K Programming Documentation (libKS)}}
+\author{Michael Z and Brandon K\thanks{with support from WestMech and VTOW}}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{centering}
+\url{https://github.com/NoozAbooz/210K-PushBack-2026/}\\
+\end{centering}
+\newpage
+
+\tableofcontents
+\input{wrapper.tex}
+
+\end{document}&quot;&quot;&quot;)
+
+    &#39;&#39;&#39;
+    Ultimately, create a zipfile which can be automatically read by Overleaf
+    &#39;&#39;&#39;
+    # Create Path objects to the output zip and the temp folder containing all the assets
+    zip_dest = docs_dest / &quot;output.zip&quot;
+
+    # create a ZipFile object with the provided parameters
+    zipf = zipfile.ZipFile(str(zip_dest), mode=&#39;w&#39;, compression=zipfile.ZIP_DEFLATED)
+
+    # Function (defined above) recursively writes each file to the zip
+    zip_source_truncated = Path(&#39;.&#39;) / &#39;output&#39;
+    zipdir(str(zip_source_truncated), zipf)
+
+    # Recursively delete output folder once we have zipped it
+    try:
+        rmtree(str(zip_source_truncated))
+    except OSError as e:
+        print(e)
+
+    #zipf.extractall(&quot;/Users/Michael/Documents/GitHub/2088S-OverUnder-2024/docs/&quot;)
+    zipf.close()
+
+    with zipfile.ZipFile(zip_dest, &#39;r&#39;) as zip_ref:
+        zip_ref.extractall(docs_dest)
+
+    print(&quot;\033[92m&quot; + &quot;Success! Find your zip at: docs/output.zip&quot; + &quot;\033[0m&quot;)
+    print(&quot;Upload the zip directly to overleaf and let it compile into a PDF!&quot;)
+    print(&quot;Need help troubleshooting? See: https://github.com/Udit8348/Hard-Copy#troubleshooting&quot;)
+
+
+if __name__ == &quot;__main__&quot;:
+    # v 1.0
+    main()</code></pre><h1>./scripts/htmlify.sh</h1>
+<p><strong>Last commit:</strong> <a href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/></a></p>
+<pre class="line-numbers language-bash" style="white-space: pre-wrap;"><code>#!/usr/bin/env bash
+
+# This script converts text files into one HTML file.
+
+# List of files to convert (glob)
+FILES=(
+  &quot;./README.md&quot;
+  &quot;./src/*&quot;
+  &quot;./src/**/*&quot;
+  &quot;./scripts/*&quot;
+)
+
+# Ext override map
+EXT_OVERRIDES=(
+  &quot;hpp:cpp&quot;
+  &quot;sh:bash&quot;
+  &quot;h:c&quot;
+)
+REPO_SOURCE=$(git config --get remote.origin.url)
+
+declare -A FILE_OVERRIDES
+FILE_OVERRIDES[&quot;./src/screen/pl_mpeg.c&quot;]=&quot;&lt;p&gt;This file has been omitted as it is 3,486 lines and is available to view on the GitHub repository.&lt;/p&gt;&quot;
+
+# Output file
+OUTPUT=&quot;index.html&quot;
+
+# Header
+cat &lt;&lt;EOF &gt; $OUTPUT
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;My Project&lt;/title&gt;
+
+  &lt;!-- PrismJS --&gt;
+  &lt;link rel=&quot;stylesheet&quot; href=&quot;https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-coy.min.css&quot; /&gt;
+  &lt;link rel=&quot;stylesheet&quot; href=&quot;https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css&quot; /&gt;
+
+  &lt;style&gt;
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 8px;
+      font-size: 0.75rem;
+    }
+
+    pre {
+      margin: 0;
+    }
+
+    code {
+      font-family: monospace;
+    }
+
+    h1 {
+      margin-top: 1rem;
+      margin-bottom: 0.25rem;
+    }
+
+    p {
+      margin-top: 0.25rem;
+      margin-bottom: 0.25rem;
+    }
+
+    pre[class*=&quot;language-&quot;],
+    code[class*=&quot;language-&quot;] {
+      max-height: inherit !important;
+      overflow: hidden !important;
+
+      box-shadow: none !important;
+      border-left: none !important;
+    }
+
+    code[class*=&quot;language&quot;] {
+      overflow: hidden !important;
+      font-size: 0.75rem;
+    }
+  }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+EOF
+
+# Append each file to the output with a header of file path
+for FILE in ${FILES[@]}; do
+  # Ignore directories
+  if [ -d &quot;$FILE&quot; ]; then
+    continue
+  fi
+
+  FILE_EXT=&quot;${FILE##*.}&quot;
+
+  # if markdown, convert to html
+  if [ &quot;$FILE_EXT&quot; = &quot;md&quot; ]; then
+    FILE_EXT=&quot;html&quot;
+    FILE=&quot;$FILE&quot;
+    pandoc -f markdown -t html $FILE &gt;&gt; $OUTPUT
+    echo &quot;&lt;hr&gt;&quot; &gt;&gt; $OUTPUT
+
+    continue
+  fi
+
+  # Check if the file extension is overridden
+  for OVERRIDE in ${EXT_OVERRIDES[@]}; do
+    EXT=${OVERRIDE%:*}
+    NEW_EXT=${OVERRIDE#*:}
+    if [ &quot;$FILE_EXT&quot; = &quot;$EXT&quot; ]; then
+      FILE_EXT=&quot;$NEW_EXT&quot;
+    fi
+  done
+
+  # Append the title
+  echo &quot;&lt;h1&gt;$FILE&lt;/h1&gt;&quot; &gt;&gt; $OUTPUT
+
+  # Get the last git commit message and date
+  LAST_COMMIT=$(git log -1 --pretty=format:&quot;%s (%ad)&quot; --date=short $FILE)
+  LAST_COMMIT_HASH=$(git log -1 --pretty=format:&quot;%H&quot; $FILE)
+  echo &quot;&lt;p&gt;&lt;strong&gt;Last commit:&lt;/strong&gt; &lt;a href=&quot;$REPO_SOURCE/commit/$LAST_COMMIT_HASH&quot;&gt;$LAST_COMMIT&lt;/a&gt;&lt;/p&gt;&quot; &gt;&gt; $OUTPUT
+
+  # Override content if required
+  if [ -z &quot;${FILE_OVERRIDES[$FILE]}&quot; ]; then
+    # Append the code
+    echo -n &quot;&lt;pre class=\&quot;line-numbers language-$FILE_EXT\&quot; style=\&quot;white-space: pre-wrap;\&quot;&gt;&lt;code&gt;&quot; &gt;&gt; $OUTPUT
+    cat $FILE | sed &#39;s/&amp;/\&amp;amp;/g; s/&lt;/\&amp;lt;/g; s/&gt;/\&amp;gt;/g; s/&quot;/\&amp;quot;/g; s/&#39;&quot;&#39;&quot;&#39;/\&amp;#39;/g&#39; &gt;&gt; $OUTPUT
+    echo -n &quot;&lt;/code&gt;&lt;/pre&gt;&quot; &gt;&gt; $OUTPUT
+  else
+    echo &quot;${FILE_OVERRIDES[$FILE]}&quot; &gt;&gt; $OUTPUT
+  fi
+done
+
+# Footer
+cat &lt;&lt;EOF &gt;&gt; $OUTPUT
+  &lt;!-- PrismJS --&gt;
+  &lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js&quot;&gt;&lt;/script&gt;
+  &lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js&quot;&gt;&lt;/script&gt;
+  &lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js&quot;&gt;&lt;/script&gt;
+  &lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js&quot;&gt;&lt;/script&gt;
+  &lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js&quot;&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+EOF</code></pre>  <!-- PrismJS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+</body>
+</html>

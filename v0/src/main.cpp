@@ -3,6 +3,7 @@
 
 #include "screen/init.hpp"
 #include "auton/movement.hpp"
+#include "intake/pneumatics.hpp"
 
 extern pros::Motor intakeMotor;
 void startOdometryTask();
@@ -36,7 +37,19 @@ void disabled() {}
  */
 void competition_initialize() {}
 
-void autonomous() {}
+void autonomous() {
+	int auton = get_selected_auton();
+	
+	switch(auton) {
+	case 0:
+		autonMoveForward();
+	break;
+	case 1:
+	break;
+}
+	
+}
+
 
 /**
  * Runs the operator control code. This function will be started in its own task
@@ -72,6 +85,7 @@ void opcontrol() {
 
 		if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)) {
 			telemToggle = !telemToggle; // Toggle telemetry display
+			toggleIntakeLift();
 		}
 		
 		if(!telemToggle) {
@@ -87,6 +101,7 @@ void opcontrol() {
 		} else {
 			intakeMotor.move(0); // Intake stop
 		}
+
 		pros::delay(20);               // Run for 20 ms then update
 	}
 }

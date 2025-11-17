@@ -1,9 +1,8 @@
 #include "main.h"
-
-pros::Motor intakeMotor(7);
+#include "globals.hpp"
 
 void intakeForward() {
-intakeMotor.move(127);
+	intakeMotor.move(127);
 }
 
 void intakeBackward() {

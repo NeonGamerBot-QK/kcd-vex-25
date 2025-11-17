@@ -4,8 +4,8 @@
 #include "screen/init.hpp"
 #include "auton/movement.hpp"
 #include "intake/pneumatics.hpp"
+#include "globals.hpp"
 
-extern pros::Motor intakeMotor;
 void startOdometryTask();
 
 /**
@@ -41,13 +41,40 @@ void autonomous() {
 	int auton = get_selected_auton();
 	
 	switch(auton) {
-	case 0:
-		autonMoveForward();
-	break;
-	case 1:
-	break;
-}
-	
+		case 0: // Red Left - AWP
+			moveForward(100, 1000);
+			turnRight(80, 500);
+			moveForward(100, 1000);
+			break;
+		
+		case 1: // Red Right - Score
+			moveForward(100, 1200);
+			turnLeft(80, 500);
+			moveBackward(100, 800);
+			break;
+		
+		case 2: // Blue Left - Score
+			moveForward(100, 1200);
+			turnRight(80, 500);
+			moveBackward(100, 800);
+			break;
+		
+		case 3: // Blue Right - AWP
+			moveForward(100, 1000);
+			turnLeft(80, 500);
+			moveForward(100, 1000);
+			break;
+		
+		case 4: // Skills Run
+			moveForward(127, 2000);
+			turnRight(100, 1000);
+			moveForward(127, 2000);
+			break;
+		
+		case 5: // Do Nothing
+		default:
+			break;
+	}
 }
 
 
@@ -66,8 +93,6 @@ void autonomous() {
  */
 void opcontrol() {
 	pros::Controller master(pros::E_CONTROLLER_MASTER);
-	pros::MotorGroup left_mg({2, 4, 6});
-	pros::MotorGroup right_mg({-1, -15, -3});
 	bool telemToggle = true;
 
 	while (true) {
@@ -86,6 +111,10 @@ void opcontrol() {
 		if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)) {
 			telemToggle = !telemToggle; // Toggle telemetry display
 			toggleIntakeLift();
+		}
+		if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_DOWN) && !pros::competition::is_connected()) {
+			master.rumble("- -");
+			autonomous();
 		}
 		
 		if(!telemToggle) {

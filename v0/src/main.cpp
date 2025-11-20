@@ -8,6 +8,35 @@
 
 void startOdometryTask();
 
+const char* get_auton_name(int auton) {
+	switch(auton) {
+		case 0: return "Red Left";
+		case 1: return "Red Right";
+		case 2: return "Blue Left";
+		case 3: return "Blue Right";
+		case 4: return "Skills";
+		case 5: return "None";
+		default: return "Unknown";
+	}
+}
+
+// PID Logging Task
+void pid_log_task(void* param) {
+	printf("Time,X,Y,Theta,Auton\n"); // CSV Header
+	while (true) {
+		lemlib::Pose p = chassis.getPose();
+		int auton = get_selected_auton();
+		const char* name = get_auton_name(auton);
+		
+		if (pros::competition::is_connected()) {
+			printf("%d,%.2f,%.2f,%.2f,COMP\n", pros::millis(), p.x, p.y, p.theta);
+		} else {
+			printf("%d,%.2f,%.2f,%.2f,%s\n", pros::millis(), p.x, p.y, p.theta, name);
+		}
+		pros::delay(100);
+	}
+}
+
 /**
  * Runs initialization code. This occurs as soon as the program is started.
  *
@@ -16,7 +45,12 @@ void startOdometryTask();
  */
 void initialize() {
 	screen_init();
-	startOdometryTask();
+	chassis.calibrate(); // Calibrate chassis sensors
+	
+	// Start logging task
+	pros::Task logger(pid_log_task, nullptr, "PID Logger");
+	
+	// startOdometryTask(); // Removed in favor of LemLib's internal odometry
 }
 
 /**
@@ -42,9 +76,19 @@ void autonomous() {
 	
 	switch(auton) {
 		case 0: // Red Left - AWP
-			moveForward(100, 1000);
-			turnRight(80, 500);
-			moveForward(100, 1000);
+			moveBackward(100, 100);
+			// intake balls in here
+			// TODO: remove
+			pros::delay(1000);
+			moveForward(100, 400);
+			// implement functionaliy for outake here (ts will send balls into the bridge)
+			// wait till outtake is done
+			// todo: remove this
+			pros::delay(5000);
+			moveBackward(100, 100);
+			turnRight(80, 400);
+			moveForward(100, 400);
+			// dispense balls here again..
 			break;
 		
 		case 1: // Red Right - Score
@@ -60,9 +104,11 @@ void autonomous() {
 			break;
 		
 		case 3: // Blue Right - AWP
-			moveForward(100, 1000);
+			moveForward(100, 200);
+			// sleep 2
+			pros::delay(1000);
 			turnLeft(80, 500);
-			moveForward(100, 1000);
+			// moveForward(100, 1000);
 			break;
 		
 		case 4: // Skills Run
@@ -108,7 +154,58 @@ void opcontrol() {
 			theta += 360;
 		}
 
-		if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)) {
+		// Motor connection check
+		static pros::Motor l1(PORT_LEFT_1);
+		static pros::Motor l2(PORT_LEFT_2);
+		static pros::Motor l3(PORT_LEFT_3);
+		static pros::Motor r1(PORT_RIGHT_1);
+		static pros::Motor r2(PORT_RIGHT_2);
+		static pros::Motor r3(PORT_RIGHT_3);
+		
+		bool motor_err = false;
+		
+		if (!l1.is_installed()) { 
+			printf("L1 (%d) DC!\n", PORT_LEFT_1); 
+			master.print(0, 0, "Err: L1 (%d)", PORT_LEFT_1); 
+			master.rumble("."); 
+			motor_err = true;
+		} else if (!l2.is_installed()) { 
+			printf("L2 (%d) DC!\n", PORT_LEFT_2); 
+			master.print(0, 0, "Err: L2 (%d)", PORT_LEFT_2); 
+			master.rumble("."); 
+			motor_err = true;
+		} else if (!l3.is_installed()) { 
+			printf("L3 (%d) DC!\n", PORT_LEFT_3); 
+			master.print(0, 0, "Err: L3 (%d)", PORT_LEFT_3); 
+			master.rumble("."); 
+			motor_err = true;
+		} else if (!r1.is_installed()) { 
+			printf("R1 (%d) DC!\n", PORT_RIGHT_1); 
+			master.print(0, 0, "Err: R1 (%d)", PORT_RIGHT_1); 
+			master.rumble("."); 
+			motor_err = true;
+		} else if (!r2.is_installed()) { 
+			printf("R2 (%d) DC!\n", PORT_RIGHT_2); 
+			master.print(0, 0, "Err: R2 (%d)", PORT_RIGHT_2); 
+			master.rumble("."); 
+			motor_err = true;
+		} else if (!r3.is_installed()) { 
+			printf("R3 (%d) DC!\n", PORT_RIGHT_3); 
+			master.print(0, 0, "Err: R3 (%d)", PORT_RIGHT_3); 
+			motor_err = true;
+		}
+		if(motor_err) {
+			master.rumble("."); 
+		}
+		 // ignore intake
+		//  else if (!intakeMotor.is_installed()) { 
+		// 	printf("Intake (%d) DC!\n", PORT_INTAKE); 
+		// 	master.print(0, 0, "Err: Intake"); 
+		// 	master.rumble("."); 
+		// 	motor_err = true;
+		// }
+		
+		if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)) {
 			telemToggle = !telemToggle; // Toggle telemetry display
 			toggleIntakeLift();
 		}
@@ -117,11 +214,18 @@ void opcontrol() {
 			autonomous();
 		}
 		
-		if(!telemToggle) {
-			master.print(0, 0, "DT%.0lf|INT%.0lf|T%.0lf  ", drivetrainTemps, 0, theta);
-		} else {
-			// master.print(0, 0, "X:%.0lf Y:%.0lf T:%.0lf   ", chassis.getPose().x, chassis.getPose().y, theta);
-			master.print(0, 0, "X:%.0lf Y:%.0lf T:%.0lf   ", 0, 1, theta);
+		if (!motor_err) {
+			if(!telemToggle) {
+				master.print(0, 0, "DT%.0lf|INT%.0lf|T%.0lf  ", drivetrainTemps, 0, theta);
+			} else {
+				lemlib::Pose p = chassis.getPose();
+				const char* name = get_auton_name(get_selected_auton());
+				char short_name[10];
+				strncpy(short_name, name, 4); // First 4 chars
+				short_name[4] = '\0';
+				
+				master.print(0, 0, "X:%.0f Y:%.0f %s   ", p.x, p.y, name);
+			}
 		}
 		if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
 			intakeMotor.move(127); // Intake forward

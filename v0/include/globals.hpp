@@ -3,8 +3,23 @@
 
 #include "main.h"
 
+// Port Definitions
+constexpr int PORT_LEFT_1 = 13;
+constexpr int PORT_LEFT_2 = 4;
+constexpr int PORT_LEFT_3 = 6;
+
+constexpr int PORT_RIGHT_1 = 1;
+constexpr int PORT_RIGHT_2 = 15;
+constexpr int PORT_RIGHT_3 = 3;
+
+constexpr int PORT_INTAKE = 7;
+
 extern pros::MotorGroup left_mg;
 extern pros::MotorGroup right_mg;
 extern pros::Motor intakeMotor;
+
+// LemLib Chassis
+#include "lemlib/api.hpp"
+extern lemlib::Chassis chassis;
 
 #endif

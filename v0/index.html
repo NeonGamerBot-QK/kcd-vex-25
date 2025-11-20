@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="utf-8">
   <title>My Project</title>
 
   <!-- PrismJS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-coy.min.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" />
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" />
 
   <style>
     body {
@@ -47,15 +49,18 @@
       overflow: hidden !important;
       font-size: 0.75rem;
     }
-  }
+    }
   </style>
 </head>
+
 <body>
-<h2 id="readme-here">Readme here</h2>
-<hr>
-<h1>./src/main.cpp</h1>
-<p><strong>Last commit:</strong> <a href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/4716ed75c14647259ed9433435e654b23f859211>fix: acl  (2025-11-10)</a></p>
-<pre class="line-numbers language-cpp" style="white-space: pre-wrap;"><code>#include &quot;lemlib/api.hpp&quot; // IWYU pragma: keep
+  <h2 id="readme-here">Readme here</h2>
+  <hr>
+  <h1>./src/main.cpp</h1>
+  <p><strong>Last commit:</strong> <a
+      href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/4716ed75c14647259ed9433435e654b23f859211>fix: acl 
+      (2025-11-10)</a></p>
+  <pre class="line-numbers language-cpp" style="white-space: pre-wrap;"><code>#include &quot;lemlib/api.hpp&quot; // IWYU pragma: keep
 #include &quot;main.h&quot;
 
 #include &quot;screen/init.hpp&quot;
@@ -161,9 +166,12 @@ void opcontrol() {
 
 		pros::delay(20);               // Run for 20 ms then update
 	}
-}</code></pre><h1>./src/odom.cpp</h1>
-<p><strong>Last commit:</strong> <a href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/d356ee9b1ef962d7fd666a3f9395ff9314c100a4>update: pushing incase i screw up the drive train (2025-10-29)</a></p>
-<pre class="line-numbers language-cpp" style="white-space: pre-wrap;"><code>#include &quot;main.h&quot;
+}</code></pre>
+  <h1>./src/odom.cpp</h1>
+  <p><strong>Last commit:</strong> <a
+      href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/d356ee9b1ef962d7fd666a3f9395ff9314c100a4>update: pushing
+      incase i screw up the drive train (2025-10-29)</a></p>
+  <pre class="line-numbers language-cpp" style="white-space: pre-wrap;"><code>#include &quot;main.h&quot;
 // ----------------- CONFIG -----------------
 constexpr double WHEEL_DIAMETER_IN = 2.75;   // inches (tracking wheels)
 constexpr double TRACK_WIDTH_IN   = 10.0;   // inches between left and right tracking wheels
@@ -257,9 +265,12 @@ void odom_task_fn(void* /*param*/) {
 // call this from initialize() or competition_initialize()
 void startOdometryTask() {
   static pros::Task odomTask(odom_task_fn, nullptr, TASK_PRIORITY_DEFAULT);
-}</code></pre><h1>./src/auton/movement.cpp</h1>
-<p><strong>Last commit:</strong> <a href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/0460e1560426e64045b4833c63c67ba00da1ef55>fix: drivetrain (2025-11-10)</a></p>
-<pre class="line-numbers language-cpp" style="white-space: pre-wrap;"><code>#include &quot;main.h&quot;
+}</code></pre>
+  <h1>./src/auton/movement.cpp</h1>
+  <p><strong>Last commit:</strong> <a
+      href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/0460e1560426e64045b4833c63c67ba00da1ef55>fix: drivetrain
+      (2025-11-10)</a></p>
+  <pre class="line-numbers language-cpp" style="white-space: pre-wrap;"><code>#include &quot;main.h&quot;
 #include &quot;auton/movement.hpp&quot;
 
 void moveForward(int speed, int duration_ms) {
@@ -317,9 +328,12 @@ void autonMoveForward() {
 void autonBlue(){
 	
 }
-</code></pre><h1>./src/intake/main.cpp</h1>
-<p><strong>Last commit:</strong> <a href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/d356ee9b1ef962d7fd666a3f9395ff9314c100a4>update: pushing incase i screw up the drive train (2025-10-29)</a></p>
-<pre class="line-numbers language-cpp" style="white-space: pre-wrap;"><code>#include &quot;main.h&quot;
+</code></pre>
+  <h1>./src/intake/main.cpp</h1>
+  <p><strong>Last commit:</strong> <a
+      href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/d356ee9b1ef962d7fd666a3f9395ff9314c100a4>update: pushing
+      incase i screw up the drive train (2025-10-29)</a></p>
+  <pre class="line-numbers language-cpp" style="white-space: pre-wrap;"><code>#include &quot;main.h&quot;
 
 pros::Motor intakeMotor(7);
 
@@ -334,9 +348,10 @@ intakeMotor.move(-127);
 void intakeStop() {
 intakeMotor.move(0);
 }
-</code></pre><h1>./src/intake/pneumatics.cpp</h1>
-<p><strong>Last commit:</strong> <a href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/></a></p>
-<pre class="line-numbers language-cpp" style="white-space: pre-wrap;"><code>#include &quot;main.h&quot;
+</code></pre>
+  <h1>./src/intake/pneumatics.cpp</h1>
+  <p><strong>Last commit:</strong> <a href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit /></a></p>
+  <pre class="line-numbers language-cpp" style="white-space: pre-wrap;"><code>#include &quot;main.h&quot;
 #define DIGITAL_SENSOR_PORT &#39;A&#39;
 bool lastPistonValue = false;
 pros::ADIDigitalOut piston (DIGITAL_SENSOR_PORT);
@@ -351,9 +366,12 @@ void stopPiston() {
 void startPiston() {
     lastPistonValue = true;
     piston.set_value(true);
-}</code></pre><h1>./src/screen/init.cpp</h1>
-<p><strong>Last commit:</strong> <a href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/d356ee9b1ef962d7fd666a3f9395ff9314c100a4>update: pushing incase i screw up the drive train (2025-10-29)</a></p>
-<pre class="line-numbers language-cpp" style="white-space: pre-wrap;"><code>#include &quot;robodash/api.h&quot;
+}</code></pre>
+  <h1>./src/screen/init.cpp</h1>
+  <p><strong>Last commit:</strong> <a
+      href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/d356ee9b1ef962d7fd666a3f9395ff9314c100a4>update: pushing
+      incase i screw up the drive train (2025-10-29)</a></p>
+  <pre class="line-numbers language-cpp" style="white-space: pre-wrap;"><code>#include &quot;robodash/api.h&quot;
 #include &quot;main.h&quot;
 
 extern pros::Motor intakeMotor;
@@ -368,7 +386,7 @@ static lv_obj_t *stat_label = nullptr;
 static lv_obj_t *map_canvas = nullptr;
 static lv_obj_t *position_label = nullptr;
 
-int selected_auton = 0;
+int selected_auton = 3;
 
 static void draw_field_map(lv_obj_t *canvas) {
 	lv_canvas_fill_bg(canvas, lv_color_hex(0x404040), LV_OPA_COVER);
@@ -534,9 +552,12 @@ void screen_init() {
 	init_homeview();
 	rd_view_focus(selector_view);
 }
-</code></pre><h1>./scripts/compile_to_tex.py</h1>
-<p><strong>Last commit:</strong> <a href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/62ee70f4391a03f057c4632519155770e5ccdb59>add: modules, modules (2025-09-24)</a></p>
-<pre class="line-numbers language-py" style="white-space: pre-wrap;"><code>from pathlib import Path
+</code></pre>
+  <h1>./scripts/compile_to_tex.py</h1>
+  <p><strong>Last commit:</strong> <a
+      href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/62ee70f4391a03f057c4632519155770e5ccdb59>add: modules,
+      modules (2025-09-24)</a></p>
+  <pre class="line-numbers language-py" style="white-space: pre-wrap;"><code>from pathlib import Path
 import zipfile
 from shutil import copy, rmtree
 import os
@@ -807,9 +828,10 @@ def main():
 
 if __name__ == &quot;__main__&quot;:
     # v 1.0
-    main()</code></pre><h1>./scripts/htmlify.sh</h1>
-<p><strong>Last commit:</strong> <a href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/></a></p>
-<pre class="line-numbers language-bash" style="white-space: pre-wrap;"><code>#!/usr/bin/env bash
+    main()</code></pre>
+  <h1>./scripts/htmlify.sh</h1>
+  <p><strong>Last commit:</strong> <a href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit /></a></p>
+  <pre class="line-numbers language-bash" style="white-space: pre-wrap;"><code>#!/usr/bin/env bash
 
 # This script converts text files into one HTML file.
 
@@ -949,11 +971,13 @@ cat &lt;&lt;EOF &gt;&gt; $OUTPUT
   &lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js&quot;&gt;&lt;/script&gt;
 &lt;/body&gt;
 &lt;/html&gt;
-EOF</code></pre>  <!-- PrismJS -->
+EOF</code></pre> <!-- PrismJS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
 </body>
+
 </html>

@@ -19,6 +19,14 @@ void moveBackward(int speed, int duration_ms) {
 }
 
 void turnLeft(int speed, int duration_ms) {
+	left_mg.move(speed);
+	right_mg.move(-speed);
+	pros::delay(duration_ms);
+	left_mg.move(0);
+	right_mg.move(0);
+}
+
+void turnRight(int speed, int duration_ms) {
 	left_mg.move(-speed);
 	right_mg.move(speed);
 	pros::delay(duration_ms);
@@ -26,10 +34,3 @@ void turnLeft(int speed, int duration_ms) {
 	right_mg.move(0);
 }
 
-void turnRight(int speed, int duration_ms) {
-	left_mg.move(speed);
-	right_mg.move(-speed);
-	pros::delay(duration_ms);
-	left_mg.move(0);
-	right_mg.move(0);
-}

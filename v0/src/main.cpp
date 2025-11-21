@@ -3,8 +3,8 @@
 
 #include "screen/init.hpp"
 #include "auton/movement.hpp"
-#include "intake/pneumatics.hpp"
 #include "intake/main.hpp"
+#include "outtake/main.hpp"
 #include "globals.hpp"
 
 void startOdometryTask();
@@ -186,7 +186,6 @@ void opcontrol() {
 		
 		if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)) {
 			telemToggle = !telemToggle; // Toggle telemetry display
-			toggleIntakeLift();
 		}
 		if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_DOWN) && !pros::competition::is_connected()) {
 			master.rumble("- -");
@@ -213,7 +212,13 @@ void opcontrol() {
 		} else {
 			intakeStop();
 		}
-
+		if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L1)) {
+			outtakeForward();
+		} else if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) {
+			outtakeBackward();
+		} else {
+			outtakeStop();
+		}
 		pros::delay(20);               // Run for 20 ms then update
 	}
 }

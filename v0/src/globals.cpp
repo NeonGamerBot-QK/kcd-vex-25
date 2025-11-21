@@ -5,6 +5,8 @@ pros::MotorGroup left_mg({PORT_LEFT_1, PORT_LEFT_2, PORT_LEFT_3});
 pros::MotorGroup right_mg({-PORT_RIGHT_1, -PORT_RIGHT_2, -PORT_RIGHT_3});
 pros::Motor intakeMotor(PORT_INTAKE);
 pros::Motor intakeMotor2(PORT_INTAKE2);
+pros::Motor outtakeMotor(PORT_OUTTAKE);
+pros::Optical colorSensor(PORT_COLOR_OPTICAL);
 
 // Drivetrain Settings
 lemlib::Drivetrain drivetrain(&left_mg, &right_mg, 10.0, lemlib::Omniwheel::NEW_275, 450, 2);

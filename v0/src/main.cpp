@@ -193,8 +193,11 @@ void opcontrol() {
 		}
 		
 		if (!motor_err) {
+			double hue = colorSensor.get_hue();
+			
 			if(!telemToggle) {
 				master.print(0, 0, "DT%.0lf|INT%.0lf|T%.0lf  ", drivetrainTemps, 0, theta);
+				master.print(1, 0, "Hue: %.0f      ", hue);
 			} else {
 				lemlib::Pose p = chassis.getPose();
 				const char* name = get_auton_name(get_selected_auton());
@@ -203,6 +206,7 @@ void opcontrol() {
 				short_name[4] = '\0';
 				
 				master.print(0, 0, "X:%.0f Y:%.0f %s   ", p.x, p.y, name);
+				master.print(1, 0, "Hue: %.0f      ", hue);
 			}
 		}
 		if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {

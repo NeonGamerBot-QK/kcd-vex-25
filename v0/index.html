@@ -1,14 +1,12 @@
 <!DOCTYPE html>
 <html>
-
 <head>
   <meta charset="utf-8">
   <title>My Project</title>
 
   <!-- PrismJS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-coy.min.css" />
-  <link rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" />
 
   <style>
     body {
@@ -49,26 +47,77 @@
       overflow: hidden !important;
       font-size: 0.75rem;
     }
-    }
+  }
   </style>
 </head>
-
 <body>
-  <h2 id="readme-here">Readme here</h2>
-  <hr>
-  <h1>./src/main.cpp</h1>
-  <p><strong>Last commit:</strong> <a
-      href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/4716ed75c14647259ed9433435e654b23f859211>fix: acl 
-      (2025-11-10)</a></p>
-  <pre class="line-numbers language-cpp" style="white-space: pre-wrap;"><code>#include &quot;lemlib/api.hpp&quot; // IWYU pragma: keep
+<h2 id="readme-here">Readme here</h2>
+<hr>
+<h1>./src/globals.cpp</h1>
+<p><strong>Last commit:</strong> <a href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/fac01a69dffd66116df900eca065612ec7a762d9>update: more code (2025-11-21)</a></p>
+<pre class="line-numbers language-cpp" style="white-space: pre-wrap;"><code>#include &quot;main.h&quot;
+#include &quot;globals.hpp&quot;
+
+pros::MotorGroup left_mg({PORT_LEFT_1, PORT_LEFT_2, PORT_LEFT_3});
+pros::MotorGroup right_mg({-PORT_RIGHT_1, -PORT_RIGHT_2, -PORT_RIGHT_3});
+pros::Motor intakeMotor(PORT_INTAKE);
+pros::Motor intakeMotor2(PORT_INTAKE2);
+pros::Motor outtakeMotor(PORT_OUTTAKE);
+pros::Optical colorSensor(PORT_COLOR_OPTICAL);
+
+// Drivetrain Settings
+lemlib::Drivetrain drivetrain(&amp;left_mg, &amp;right_mg, 10.0, lemlib::Omniwheel::NEW_275, 450, 2);
+
+// PID Settings
+lemlib::ControllerSettings lateral_controller(10, 0, 3, 3, 1, 100, 3, 500, 20);
+lemlib::ControllerSettings angular_controller(2, 0, 10, 3, 1, 100, 3, 500, 20);
+
+// Sensors (Odom)
+lemlib::OdomSensors sensors(nullptr, nullptr, nullptr, nullptr, nullptr);
+
+// Chassis
+lemlib::Chassis chassis(drivetrain, lateral_controller, angular_controller, sensors);
+</code></pre><h1>./src/main.cpp</h1>
+<p><strong>Last commit:</strong> <a href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/fac01a69dffd66116df900eca065612ec7a762d9>update: more code (2025-11-21)</a></p>
+<pre class="line-numbers language-cpp" style="white-space: pre-wrap;"><code>#include &quot;lemlib/api.hpp&quot; // IWYU pragma: keep
 #include &quot;main.h&quot;
 
 #include &quot;screen/init.hpp&quot;
 #include &quot;auton/movement.hpp&quot;
-#include &quot;intake/pneumatics.hpp&quot;
+#include &quot;intake/main.hpp&quot;
+#include &quot;outtake/main.hpp&quot;
+#include &quot;globals.hpp&quot;
 
-extern pros::Motor intakeMotor;
 void startOdometryTask();
+
+const char* get_auton_name(int auton) {
+	switch(auton) {
+		case 0: return &quot;Red Left&quot;;
+		case 1: return &quot;Red Right&quot;;
+		case 2: return &quot;Blue Left&quot;;
+		case 3: return &quot;Blue Right&quot;;
+		case 4: return &quot;Skills&quot;;
+		case 5: return &quot;None&quot;;
+		default: return &quot;Unknown&quot;;
+	}
+}
+
+// PID Logging Task
+void pid_log_task(void* param) {
+	printf(&quot;Time,X,Y,Theta,Auton\n&quot;); // CSV Header
+	while (true) {
+		lemlib::Pose p = chassis.getPose();
+		int auton = get_selected_auton();
+		const char* name = get_auton_name(auton);
+		
+		if (pros::competition::is_connected()) {
+			printf(&quot;%d,%.2f,%.2f,%.2f,COMP\n&quot;, pros::millis(), p.x, p.y, p.theta);
+		} else {
+			printf(&quot;%d,%.2f,%.2f,%.2f,%s\n&quot;, pros::millis(), p.x, p.y, p.theta, name);
+		}
+		pros::delay(100);
+	}
+}
 
 /**
  * Runs initialization code. This occurs as soon as the program is started.
@@ -78,7 +127,12 @@ void startOdometryTask();
  */
 void initialize() {
 	screen_init();
-	startOdometryTask();
+	chassis.calibrate(); // Calibrate chassis sensors
+	
+	// Start logging task
+	pros::Task logger(pid_log_task, nullptr, &quot;PID Logger&quot;);
+	
+	// startOdometryTask(); // Removed in favor of LemLib&#39;s internal odometry
 }
 
 /**
@@ -103,13 +157,58 @@ void autonomous() {
 	int auton = get_selected_auton();
 	
 	switch(auton) {
-	case 0:
-		autonMoveForward();
-	break;
-	case 1:
-	break;
-}
-	
+		case 0: // Red Left - AWP
+			intakeBackward();
+			pros::delay(500);
+			moveForward(1, 2000); 
+			
+			// // Score preload
+			// intakeForward();
+			// pros::delay(1000);
+			
+			// moveBackward(36, 2000); // Back up to align
+			// turnRight(90, 1000);
+			// moveForward(24, 1500); // Touch ladder/bar
+			break;
+		
+		case 1: // Red Right - Rush Center
+			moveForward(32, 1500); // Rush to Center Goal (~1.5 tiles)
+			intakeForward(); // Grab block
+			moveBackward(24, 1500); // Retreat
+			break;
+		
+		case 2: // Blue Left - Rush Center
+			moveForward(32, 1500);
+			intakeForward();
+			moveBackward(24, 1500);
+			break;
+		
+		case 3: // Blue Right - AWP
+			intakeBackward();
+			pros::delay(500);
+			moveForward(46, 2000);
+			intakeStop();
+			intakeForward(); // Score
+			pros::delay(1000);
+			moveBackward(36, 2000);
+			turnLeft(90, 1000);
+			moveForward(24, 1500);
+			break;
+		
+		case 4: // Skills Run
+			moveForward(12, 1000); // Score Alliance
+			moveBackward(12, 1000);
+			turnRight(90, 1000);
+			moveForward(48, 2000); // Cross field
+			turnLeft(90, 1000);
+			moveForward(24, 1500); // Push into goal
+			moveBackward(24, 1500);
+			break;
+		
+		case 5: // Do Nothing
+		default:
+			break;
+	}
 }
 
 
@@ -128,8 +227,6 @@ void autonomous() {
  */
 void opcontrol() {
 	pros::Controller master(pros::E_CONTROLLER_MASTER);
-	pros::MotorGroup left_mg({2, 4, 6});
-	pros::MotorGroup right_mg({-1, -15, -3});
 	bool telemToggle = true;
 
 	while (true) {
@@ -145,33 +242,73 @@ void opcontrol() {
 			theta += 360;
 		}
 
-		if (master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)) {
-			telemToggle = !telemToggle; // Toggle telemetry display
-			toggleIntakeLift();
+		// Motor connection check
+		static pros::Motor l1(PORT_LEFT_1);
+		static pros::Motor l2(PORT_LEFT_2);
+		static pros::Motor l3(PORT_LEFT_3);
+		static pros::Motor r1(PORT_RIGHT_1);
+		static pros::Motor r2(PORT_RIGHT_2);
+		static pros::Motor r3(PORT_RIGHT_3);
+		
+		bool motor_err = false;
+		std::string err_msg = &quot;Err:&quot;;
+		
+		if (!l1.is_installed()) { printf(&quot;L1 (%d) DC!\n&quot;, PORT_LEFT_1); err_msg += &quot;L1 &quot;; motor_err = true; }
+		if (!l2.is_installed()) { printf(&quot;L2 (%d) DC!\n&quot;, PORT_LEFT_2); err_msg += &quot;L2 &quot;; motor_err = true; }
+		if (!l3.is_installed()) { printf(&quot;L3 (%d) DC!\n&quot;, PORT_LEFT_3); err_msg += &quot;L3 &quot;; motor_err = true; }
+		if (!r1.is_installed()) { printf(&quot;R1 (%d) DC!\n&quot;, PORT_RIGHT_1); err_msg += &quot;R1 &quot;; motor_err = true; }
+		if (!r2.is_installed()) { printf(&quot;R2 (%d) DC!\n&quot;, PORT_RIGHT_2); err_msg += &quot;R2 &quot;; motor_err = true; }
+		if (!r3.is_installed()) { printf(&quot;R3 (%d) DC!\n&quot;, PORT_RIGHT_3); err_msg += &quot;R3 &quot;; motor_err = true; }
+		
+		if (motor_err) {
+			master.print(0, 0, &quot;%s&quot;, err_msg.c_str());
+			master.rumble(&quot;.&quot;);
 		}
 		
-		if(!telemToggle) {
-			master.print(0, 0, &quot;DT%.0lf|INT%.0lf|T%.0lf  &quot;, drivetrainTemps, 0, theta);
-		} else {
-			// master.print(0, 0, &quot;X:%.0lf Y:%.0lf T:%.0lf   &quot;, chassis.getPose().x, chassis.getPose().y, theta);
-			master.print(0, 0, &quot;X:%.0lf Y:%.0lf T:%.0lf   &quot;, 0, 1, theta);
+		if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)) {
+			telemToggle = !telemToggle; // Toggle telemetry display
+		}
+		if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_DOWN) &amp;&amp; !pros::competition::is_connected()) {
+			master.rumble(&quot;- -&quot;);
+			autonomous();
+		}
+		
+		if (!motor_err) {
+			double hue = colorSensor.get_hue();
+			
+			if(!telemToggle) {
+				master.print(0, 0, &quot;DT%.0lf|INT%.0lf|T%.0lf  &quot;, drivetrainTemps, 0, theta);
+				master.print(1, 0, &quot;Hue: %.0f      &quot;, hue);
+			} else {
+				lemlib::Pose p = chassis.getPose();
+				const char* name = get_auton_name(get_selected_auton());
+				char short_name[10];
+				strncpy(short_name, name, 4); // First 4 chars
+				short_name[4] = &#39;\0&#39;;
+				
+				master.print(0, 0, &quot;X:%.0f Y:%.0f %s   &quot;, p.x, p.y, name);
+				master.print(1, 0, &quot;Hue: %.0f      &quot;, hue);
+			}
 		}
 		if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
-			intakeMotor.move(127); // Intake forward
+			intakeForward();
 		} else if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) {
-			intakeMotor.move(-127); // Intake backward
+			intakeBackward();
 		} else {
-			intakeMotor.move(0); // Intake stop
+			intakeStop();
 		}
-
+		if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L1)) {
+			outtakeForward();
+		} else if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) {
+			outtakeBackward();
+		} else {
+			outtakeStop();
+		}
 		pros::delay(20);               // Run for 20 ms then update
 	}
-}</code></pre>
-  <h1>./src/odom.cpp</h1>
-  <p><strong>Last commit:</strong> <a
-      href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/d356ee9b1ef962d7fd666a3f9395ff9314c100a4>update: pushing
-      incase i screw up the drive train (2025-10-29)</a></p>
-  <pre class="line-numbers language-cpp" style="white-space: pre-wrap;"><code>#include &quot;main.h&quot;
+}</code></pre><h1>./src/odom.cpp</h1>
+<p><strong>Last commit:</strong> <a href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/d356ee9b1ef962d7fd666a3f9395ff9314c100a4>update: pushing incase i screw up the drive train (2025-10-29)</a></p>
+<pre class="line-numbers language-cpp" style="white-space: pre-wrap;"><code>#include &quot;main.h&quot;
 // ----------------- CONFIG -----------------
 constexpr double WHEEL_DIAMETER_IN = 2.75;   // inches (tracking wheels)
 constexpr double TRACK_WIDTH_IN   = 10.0;   // inches between left and right tracking wheels
@@ -265,113 +402,209 @@ void odom_task_fn(void* /*param*/) {
 // call this from initialize() or competition_initialize()
 void startOdometryTask() {
   static pros::Task odomTask(odom_task_fn, nullptr, TASK_PRIORITY_DEFAULT);
-}</code></pre>
-  <h1>./src/auton/movement.cpp</h1>
-  <p><strong>Last commit:</strong> <a
-      href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/0460e1560426e64045b4833c63c67ba00da1ef55>fix: drivetrain
-      (2025-11-10)</a></p>
-  <pre class="line-numbers language-cpp" style="white-space: pre-wrap;"><code>#include &quot;main.h&quot;
+}</code></pre><h1>./src/auton/movement.cpp</h1>
+<p><strong>Last commit:</strong> <a href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/d3f22162bf0548d360e762f5f532f9bd764376eb>update: ilove coding (2025-11-21)</a></p>
+<pre class="line-numbers language-cpp" style="white-space: pre-wrap;"><code>#include &quot;main.h&quot;
 #include &quot;auton/movement.hpp&quot;
+#include &quot;globals.hpp&quot;
+#include &lt;cmath&gt;
 
-void moveForward(int speed, int duration_ms) {
-	pros::MotorGroup left_mg({-1, -2, -3});
-	pros::MotorGroup right_mg({4, 5, 6});
+// Constants
+constexpr float WHEEL_DIAM = 2.75;
+constexpr float GEAR_RATIO = 1.0; // Change if geared
+constexpr float TICKS_PER_REV = 360.0; // V5 Motor Degrees
+
+void moveForward(float distance_in, int timeout_ms) {
+	// Reset encoders
+	left_mg.tare_position();
+	right_mg.tare_position();
 	
-	left_mg.move(speed);
-	right_mg.move(speed);
-	pros::delay(duration_ms);
+	// Constants for 2.75&quot; Omni Wheels, Direct Drive
+	// Circumference = 2.75 * pi = 8.639 in
+	// 360 ticks / 8.639 in = 41.67 ticks per inch
+	float ticks_per_inch = (360.0 / (WHEEL_DIAM * M_PI)) * GEAR_RATIO;
+	float target_ticks = distance_in * ticks_per_inch;
 	
+	printf(&quot;MoveFwd: Dist=%.1f Target=%.1f\n&quot;, distance_in, target_ticks);
+	
+	long start_time = pros::millis();
+	
+	// P-Loop constants
+	float kP = 2.0; // Tuning value: higher = faster/oscillates, lower = smoother
+	
+	while (true) {
+		// Get average position
+		// Note: PROS MotorGroup get_position returns average
+		double current_pos = (left_mg.get_position() + right_mg.get_position()) / 2.0;
+		
+		float error = target_ticks - current_pos;
+		
+		// Exit if close enough or timeout
+		if (std::abs(error) &lt; 10 || (pros::millis() - start_time &gt; timeout_ms)) {
+			break;
+		}
+		
+		// Calculate speed
+		float speed = error * kP;
+		
+		// Cap speed to max +/- 127
+		if (speed &gt; 127) speed = 127;
+		if (speed &lt; -127) speed = -127;
+		
+		// Min speed to overcome friction
+		if (std::abs(speed) &lt; 20) speed = (speed &gt; 0) ? 20 : -20;
+		
+		left_mg.move(speed);
+		right_mg.move(speed);
+		
+		pros::delay(10);
+	}
+	
+	// Stop
 	left_mg.move(0);
 	right_mg.move(0);
+	printf(&quot;Move Done. Err=%.1f\n&quot;, target_ticks - (left_mg.get_position() + right_mg.get_position())/2.0);
 }
 
-void moveBackward(int speed, int duration_ms) {
-	pros::MotorGroup left_mg({-1, -2, -3});
-	pros::MotorGroup right_mg({4, 5, 6});
-	
-	left_mg.move(-speed);
-	right_mg.move(-speed);
-	pros::delay(duration_ms);
-	
-	left_mg.move(0);
-	right_mg.move(0);
+void moveBackward(float distance_in, int timeout_ms) {
+	moveForward(-distance_in, timeout_ms);
 }
 
+void turnTo(float heading_deg, int timeout_ms) {
+	// Placeholder or IMU turn implementation
+	// chassis.turnToHeading(heading_deg, timeout_ms); 
+	// Disabled chassis use
+}
+
+// Legacy wrappers
 void turnLeft(int speed, int duration_ms) {
-	pros::MotorGroup left_mg({-1, -2, -3});
-	pros::MotorGroup right_mg({4, 5, 6});
-	
-	left_mg.move(-speed);
-	right_mg.move(speed);
+	left_mg.move_velocity(speed * 4.5);
+	right_mg.move_velocity(-speed * 4.5);
 	pros::delay(duration_ms);
-	
-	left_mg.move(0);
-	right_mg.move(0);
+	left_mg.move_velocity(0);
+	right_mg.move_velocity(0);
 }
 
 void turnRight(int speed, int duration_ms) {
-	pros::MotorGroup left_mg({-1, -2, -3});
-	pros::MotorGroup right_mg({4, 5, 6});
-	
-	left_mg.move(speed);
-	right_mg.move(-speed);
+	left_mg.move_velocity(-speed * 4.5);
+	right_mg.move_velocity(speed * 4.5);
 	pros::delay(duration_ms);
-	
-	left_mg.move(0);
-	right_mg.move(0);
+	left_mg.move_velocity(0);
+	right_mg.move_velocity(0);
 }
 
-void autonMoveForward() {
-	moveForward(127, 1000);
-	// end;
-}
-void autonBlue(){
-	
-}
-</code></pre>
-  <h1>./src/intake/main.cpp</h1>
-  <p><strong>Last commit:</strong> <a
-      href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/d356ee9b1ef962d7fd666a3f9395ff9314c100a4>update: pushing
-      incase i screw up the drive train (2025-10-29)</a></p>
-  <pre class="line-numbers language-cpp" style="white-space: pre-wrap;"><code>#include &quot;main.h&quot;
+</code></pre><h1>./src/intake/main.cpp</h1>
+<p><strong>Last commit:</strong> <a href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/fac01a69dffd66116df900eca065612ec7a762d9>update: more code (2025-11-21)</a></p>
+<pre class="line-numbers language-cpp" style="white-space: pre-wrap;"><code>#include &quot;main.h&quot;
+#include &quot;globals.hpp&quot;
+#include &quot;screen/init.hpp&quot;
 
-pros::Motor intakeMotor(7);
+static int intake_state = 0; // 0=stop, 1=fwd, -1=rev
+
+void intake_task_fn(void* param) {
+    colorSensor.set_led_pwm(100); // Enable white light
+    uint32_t eject_end_time = 0;
+    
+    while (true) {
+        if (intake_state == 1) {
+            // Forward - Bottom motor always runs
+            intakeMotor.move(127);
+            
+            // Color Sort Logic
+            double hue = colorSensor.get_hue();
+            int auton = get_selected_auton();
+            bool is_red_alliance = (auton == 0 || auton == 1);
+            bool is_blue_alliance = (auton == 2 || auton == 3);
+            
+            bool seen_bad_color = false;
+            
+            // Hue: Red ~0-20 or 340-360. Blue ~200-240.
+            if (is_red_alliance) {
+                if (hue &gt; 180 &amp;&amp; hue &lt; 260) seen_bad_color = true; // Blue
+            } else if (is_blue_alliance) {
+                if (hue &lt; 20 || hue &gt; 340) seen_bad_color = true; // Red
+            }
+            
+            if (seen_bad_color) {
+                eject_end_time = pros::millis() + 200; // Eject for 200ms
+            }
+            
+            if (pros::millis() &lt; eject_end_time) {
+                intakeMotor2.move(-127); // Eject top motor
+            } else {
+                intakeMotor2.move(127); // Normal top motor
+            }
+            
+        } else if (intake_state == -1) {
+            // Backward
+            intakeMotor.move(-127);
+            intakeMotor2.move(-127);
+        } else {
+            // Stop
+            intakeMotor.move(0);
+            intakeMotor2.move(0);
+        }
+        pros::delay(10);
+    }
+}
 
 void intakeForward() {
-intakeMotor.move(127);
+    static bool task_started = false;
+    if (!task_started) {
+        pros::Task intakeTask(intake_task_fn, nullptr, &quot;Intake Task&quot;);
+        task_started = true;
+    }
+    intake_state = 1;
 }
 
 void intakeBackward() {
-intakeMotor.move(-127);
+    // Ensure task is running (if called first)
+    static bool task_started = false;
+    if (!task_started) {
+        pros::Task intakeTask(intake_task_fn, nullptr, &quot;Intake Task&quot;);
+        task_started = true;
+    }
+    intake_state = -1;
 }
 
 void intakeStop() {
-intakeMotor.move(0);
+    intake_state = 0;
 }
-</code></pre>
-  <h1>./src/intake/pneumatics.cpp</h1>
-  <p><strong>Last commit:</strong> <a href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit /></a></p>
-  <pre class="line-numbers language-cpp" style="white-space: pre-wrap;"><code>#include &quot;main.h&quot;
-#define DIGITAL_SENSOR_PORT &#39;A&#39;
-bool lastPistonValue = false;
-pros::ADIDigitalOut piston (DIGITAL_SENSOR_PORT);
-void toggleIntakeLift() {
-lastPistonValue = !lastPistonValue;
-  piston.set_value(lastPistonValue);
+</code></pre><h1>./src/outtake/main.cpp</h1>
+<p><strong>Last commit:</strong> <a href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/fac01a69dffd66116df900eca065612ec7a762d9>update: more code (2025-11-21)</a></p>
+<pre class="line-numbers language-cpp" style="white-space: pre-wrap;"><code>#include &quot;main.h&quot;
+#include &quot;globals.hpp&quot;
+
+// Pneumatics (Port A)
+#define OUTTAKE_PISTON_PORT &#39;A&#39;
+pros::ADIDigitalOut outtakePiston(OUTTAKE_PISTON_PORT);
+bool outtakePistonState = false;
+
+void toggleOuttakePiston() {
+    outtakePistonState = !outtakePistonState;
+    outtakePiston.set_value(outtakePistonState);
 }
-void stopPiston() {
-    lastPistonValue = false;
-    piston.set_value(false);
+
+void setOuttakePiston(bool state) {
+    outtakePistonState = state;
+    outtakePiston.set_value(state);
 }
-void startPiston() {
-    lastPistonValue = true;
-    piston.set_value(true);
-}</code></pre>
-  <h1>./src/screen/init.cpp</h1>
-  <p><strong>Last commit:</strong> <a
-      href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/d356ee9b1ef962d7fd666a3f9395ff9314c100a4>update: pushing
-      incase i screw up the drive train (2025-10-29)</a></p>
-  <pre class="line-numbers language-cpp" style="white-space: pre-wrap;"><code>#include &quot;robodash/api.h&quot;
+
+// Motor (Port 8)
+void outtakeForward() {
+    outtakeMotor.move(127);
+}
+
+void outtakeBackward() {
+    outtakeMotor.move(-127);
+}
+
+void outtakeStop() {
+    outtakeMotor.move(0);
+}
+</code></pre><h1>./src/screen/init.cpp</h1>
+<p><strong>Last commit:</strong> <a href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/70f58a4c74847d25dd58b7387021f7efc86de88e>fix: oom error (2025-11-11)</a></p>
+<pre class="line-numbers language-cpp" style="white-space: pre-wrap;"><code>#include &quot;robodash/api.h&quot;
 #include &quot;main.h&quot;
 
 extern pros::Motor intakeMotor;
@@ -386,7 +619,7 @@ static lv_obj_t *stat_label = nullptr;
 static lv_obj_t *map_canvas = nullptr;
 static lv_obj_t *position_label = nullptr;
 
-int selected_auton = 3;
+int selected_auton = 0;
 
 static void draw_field_map(lv_obj_t *canvas) {
 	lv_canvas_fill_bg(canvas, lv_color_hex(0x404040), LV_OPA_COVER);
@@ -395,27 +628,27 @@ static void draw_field_map(lv_obj_t *canvas) {
 	lv_draw_rect_dsc_init(&amp;rect_dsc);
 	rect_dsc.bg_color = lv_color_hex(0x808080);
 	rect_dsc.border_color = lv_color_white();
-	rect_dsc.border_width = 2;
+	rect_dsc.border_width = 1;
 	
-	lv_canvas_draw_rect(canvas, 5, 5, 200, 200, &amp;rect_dsc);
+	lv_canvas_draw_rect(canvas, 5, 5, 110, 110, &amp;rect_dsc);
 	
 	lv_draw_line_dsc_t line_dsc;
 	lv_draw_line_dsc_init(&amp;line_dsc);
 	line_dsc.color = lv_color_hex(0x606060);
 	line_dsc.width = 1;
 	
-	lv_point_t h_line[] = {{5, 105}, {205, 105}};
+	lv_point_t h_line[] = {{5, 60}, {115, 60}};
 	lv_canvas_draw_line(canvas, h_line, 2, &amp;line_dsc);
-	lv_point_t v_line[] = {{105, 5}, {105, 205}};
+	lv_point_t v_line[] = {{60, 5}, {60, 115}};
 	lv_canvas_draw_line(canvas, v_line, 2, &amp;line_dsc);
 }
 
 static void draw_robot_position(lv_obj_t *canvas, double x, double y, double theta) {
-	int map_x = 105 + (int)(x * 1.5);
-	int map_y = 105 - (int)(y * 1.5);
+	int map_x = 60 + (int)(x * 0.8);
+	int map_y = 60 - (int)(y * 0.8);
 	
-	map_x = (map_x &lt; 5) ? 5 : (map_x &gt; 205) ? 205 : map_x;
-	map_y = (map_y &lt; 5) ? 5 : (map_y &gt; 205) ? 205 : map_y;
+	map_x = (map_x &lt; 5) ? 5 : (map_x &gt; 115) ? 115 : map_x;
+	map_y = (map_y &lt; 5) ? 5 : (map_y &gt; 115) ? 115 : map_y;
 	
 	lv_draw_rect_dsc_t robot_dsc;
 	lv_draw_rect_dsc_init(&amp;robot_dsc);
@@ -437,9 +670,9 @@ static void draw_robot_position(lv_obj_t *canvas, double x, double y, double the
 }
 
 void update_stats_task(void* param) {
-	static lv_color_t cbuf[LV_CANVAS_BUF_SIZE_TRUE_COLOR(210, 210)];
+	static lv_color_t cbuf[LV_CANVAS_BUF_SIZE_TRUE_COLOR(120, 120)];
 	if (map_canvas != nullptr) {
-		lv_canvas_set_buffer(map_canvas, cbuf, 210, 210, LV_IMG_CF_TRUE_COLOR);
+		lv_canvas_set_buffer(map_canvas, cbuf, 120, 120, LV_IMG_CF_TRUE_COLOR);
 	}
 	
 	while (true) {
@@ -449,16 +682,27 @@ void update_stats_task(void* param) {
 			double intake_temp = intakeMotor.get_temperature();
 			
 			char buf[256];
+			
+			#ifdef SHOW_COLOR_ON_SCREEN
+			double hue = colorSensor.get_hue();
 			snprintf(buf, sizeof(buf), 
-				&quot;Battery: %.0f%%\n&quot;
-				&quot;DT Temp: %.0fC\n&quot;
-				&quot;Intake: %.0fC\n&quot;
-				&quot;Mode: %s&quot;,
+				&quot;Batt: %.0f%%\nDT: %.0fC\nIntk: %.0fC\nHue: %.0f\nMode: %s&quot;,
+				battery,
+				dt_temp_left,
+				intake_temp,
+				hue,
+				pros::competition::is_autonomous() ? &quot;Auto&quot; : &quot;Driver&quot;
+			);
+			#else
+			snprintf(buf, sizeof(buf), 
+				&quot;Batt: %.0f%%\nDT: %.0fC\nIntk: %.0fC\nMode: %s&quot;,
 				battery,
 				dt_temp_left,
 				intake_temp,
 				pros::competition::is_autonomous() ? &quot;Auto&quot; : &quot;Driver&quot;
 			);
+			#endif
+			
 			lv_label_set_text(stat_label, buf);
 			
 			double x = odom_get_x();
@@ -466,8 +710,8 @@ void update_stats_task(void* param) {
 			double theta = odom_get_theta_deg();
 			
 			if (position_label != nullptr) {
-				char pos_buf[128];
-				snprintf(pos_buf, sizeof(pos_buf), &quot;X: %.1f  Y: %.1f\nHeading: %.0f°&quot;, x, y, theta);
+				char pos_buf[64];
+				snprintf(pos_buf, sizeof(pos_buf), &quot;X:%.1f Y:%.1f H:%.0f&quot;, x, y, theta);
 				lv_label_set_text(position_label, pos_buf);
 			}
 			
@@ -476,7 +720,7 @@ void update_stats_task(void* param) {
 				draw_robot_position(map_canvas, x, y, theta);
 			}
 		}
-		pros::delay(100);
+		pros::delay(200);
 	}
 }
 
@@ -486,14 +730,14 @@ void screen_deinit() {
 
 void init_homeview() {
 	stat_label = lv_label_create(rd_view_obj(homeview));
-	lv_label_set_text(stat_label, &quot;Waiting for Competition...&quot;);
+	lv_label_set_text(stat_label, &quot;Ready&quot;);
 	lv_obj_align(stat_label, LV_ALIGN_LEFT_MID, 10, -30);
 	
 	map_canvas = lv_canvas_create(rd_view_obj(homeview));
 	lv_obj_align(map_canvas, LV_ALIGN_RIGHT_MID, -10, 0);
 	
 	position_label = lv_label_create(rd_view_obj(homeview));
-	lv_label_set_text(position_label, &quot;X: 0.0  Y: 0.0\nHeading: 0°&quot;);
+	lv_label_set_text(position_label, &quot;X:0 Y:0 H:0&quot;);
 	lv_obj_align(position_label, LV_ALIGN_LEFT_MID, 10, 30);
 	
 	static pros::Task stats_task(update_stats_task, nullptr, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, &quot;Stats&quot;);
@@ -504,43 +748,28 @@ void auton_screen_init() {
 }
 
 void init_auton_selector() {
-	rd_view_t *selector = selector_view;
+	lv_obj_t *title = lv_label_create(rd_view_obj(selector_view));
+	lv_label_set_text(title, &quot;Auton&quot;);
+	lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 10);
 	
-	lv_obj_t *selector_label = lv_label_create(rd_view_obj(selector));
-	lv_label_set_text(selector_label, &quot;Select Autonomous:&quot;);
-	lv_obj_align(selector_label, LV_ALIGN_TOP_MID, 0, 20);
+	static const char* names[] = {&quot;Red L&quot;, &quot;Red R&quot;, &quot;Blue L&quot;, &quot;Blue R&quot;, &quot;Skills&quot;, &quot;None&quot;};
 	
-	const char* auton_names[] = {
-		&quot;Move forward&quot;, 
-		&quot;Do nothing&quot;,
-		&quot;Blue side&quot;,
-		&quot;Red side&quot;,
-		&quot;Skills!&quot;
-	};
-	
-	lv_obj_t *btn_container = lv_obj_create(rd_view_obj(selector));
-	lv_obj_set_size(btn_container, 400, 180);
-	lv_obj_align(btn_container, LV_ALIGN_CENTER, 0, 20);
-	lv_obj_set_flex_flow(btn_container, LV_FLEX_FLOW_ROW_WRAP);
-	lv_obj_set_flex_align(btn_container, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-	
+	int y_pos = 40;
 	for (int i = 0; i &lt; 6; i++) {
-		lv_obj_t *btn = lv_btn_create(btn_container);
-		lv_obj_set_size(btn, 180, 50);
+		lv_obj_t *btn = lv_btn_create(rd_view_obj(selector_view));
+		lv_obj_set_size(btn, 200, 35);
+		lv_obj_align(btn, LV_ALIGN_TOP_MID, 0, y_pos);
 		lv_obj_add_event_cb(btn, [](lv_event_t *e) {
-			int auton_idx = (int)(intptr_t)lv_event_get_user_data(e);
-			selected_auton = auton_idx;
+			selected_auton = (int)(intptr_t)lv_event_get_user_data(e);
 			rd_view_focus(homeview);
 		}, LV_EVENT_CLICKED, (void*)(intptr_t)i);
 		
-		lv_obj_t *label = lv_label_create(btn);
-		lv_label_set_text(label, auton_names[i]);
-		lv_obj_center(label);
+		lv_obj_t *lbl = lv_label_create(btn);
+		lv_label_set_text(lbl, names[i]);
+		lv_obj_center(lbl);
+		
+		y_pos += 38;
 	}
-	
-	lv_obj_t *selected_label = lv_label_create(rd_view_obj(selector));
-	lv_label_set_text(selected_label, &quot;Current: None&quot;);
-	lv_obj_align(selected_label, LV_ALIGN_BOTTOM_MID, 0, -10);
 }
 
 int get_selected_auton() {
@@ -552,12 +781,9 @@ void screen_init() {
 	init_homeview();
 	rd_view_focus(selector_view);
 }
-</code></pre>
-  <h1>./scripts/compile_to_tex.py</h1>
-  <p><strong>Last commit:</strong> <a
-      href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/62ee70f4391a03f057c4632519155770e5ccdb59>add: modules,
-      modules (2025-09-24)</a></p>
-  <pre class="line-numbers language-py" style="white-space: pre-wrap;"><code>from pathlib import Path
+</code></pre><h1>./scripts/compile_to_tex.py</h1>
+<p><strong>Last commit:</strong> <a href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/62ee70f4391a03f057c4632519155770e5ccdb59>add: modules, modules (2025-09-24)</a></p>
+<pre class="line-numbers language-py" style="white-space: pre-wrap;"><code>from pathlib import Path
 import zipfile
 from shutil import copy, rmtree
 import os
@@ -828,10 +1054,9 @@ def main():
 
 if __name__ == &quot;__main__&quot;:
     # v 1.0
-    main()</code></pre>
-  <h1>./scripts/htmlify.sh</h1>
-  <p><strong>Last commit:</strong> <a href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit /></a></p>
-  <pre class="line-numbers language-bash" style="white-space: pre-wrap;"><code>#!/usr/bin/env bash
+    main()</code></pre><h1>./scripts/htmlify.sh</h1>
+<p><strong>Last commit:</strong> <a href=https://github.com/NeonGamerBot-QK/kcd-vex-25/commit/91dcbfc97bcc479f8cce9e8d6b4da815349459c8>enhancement(lint): Fix lint errors for v0/scripts/htmlify.sh (2025-11-12)</a></p>
+<pre class="line-numbers language-bash" style="white-space: pre-wrap;"><code>#!/usr/bin/env bash
 
 # This script converts text files into one HTML file.
 
@@ -858,7 +1083,7 @@ FILE_OVERRIDES[&quot;./src/screen/pl_mpeg.c&quot;]=&quot;&lt;p&gt;This file has 
 OUTPUT=&quot;index.html&quot;
 
 # Header
-cat &lt;&lt;EOF &gt; $OUTPUT
+cat &lt;&lt; EOF &gt; $OUTPUT
 &lt;!DOCTYPE html&gt;
 &lt;html&gt;
 &lt;head&gt;
@@ -962,7 +1187,7 @@ for FILE in ${FILES[@]}; do
 done
 
 # Footer
-cat &lt;&lt;EOF &gt;&gt; $OUTPUT
+cat &lt;&lt; EOF &gt;&gt; $OUTPUT
   &lt;!-- PrismJS --&gt;
   &lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js&quot;&gt;&lt;/script&gt;
   &lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js&quot;&gt;&lt;/script&gt;
@@ -971,13 +1196,12 @@ cat &lt;&lt;EOF &gt;&gt; $OUTPUT
   &lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js&quot;&gt;&lt;/script&gt;
 &lt;/body&gt;
 &lt;/html&gt;
-EOF</code></pre> <!-- PrismJS -->
+EOF
+</code></pre>  <!-- PrismJS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
-  <script
-    src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
 </body>
-
 </html>

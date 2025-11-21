@@ -76,6 +76,18 @@ void update_stats_task(void* param) {
 			double intake_temp = intakeMotor.get_temperature();
 			
 			char buf[256];
+			
+			#ifdef SHOW_COLOR_ON_SCREEN
+			double hue = colorSensor.get_hue();
+			snprintf(buf, sizeof(buf), 
+				"Batt: %.0f%%\nDT: %.0fC\nIntk: %.0fC\nHue: %.0f\nMode: %s",
+				battery,
+				dt_temp_left,
+				intake_temp,
+				hue,
+				pros::competition::is_autonomous() ? "Auto" : "Driver"
+			);
+			#else
 			snprintf(buf, sizeof(buf), 
 				"Batt: %.0f%%\nDT: %.0fC\nIntk: %.0fC\nMode: %s",
 				battery,
@@ -83,6 +95,8 @@ void update_stats_task(void* param) {
 				intake_temp,
 				pros::competition::is_autonomous() ? "Auto" : "Driver"
 			);
+			#endif
+			
 			lv_label_set_text(stat_label, buf);
 			
 			double x = odom_get_x();

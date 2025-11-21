@@ -13,10 +13,12 @@ constexpr int PORT_RIGHT_2 = 15;
 constexpr int PORT_RIGHT_3 = 3;
 
 constexpr int PORT_INTAKE = 7;
+constexpr int PORT_INTAKE2 = 2;
 
 extern pros::MotorGroup left_mg;
 extern pros::MotorGroup right_mg;
 extern pros::Motor intakeMotor;
+extern pros::Motor intakeMotor2;
 
 // LemLib Chassis
 #include "lemlib/api.hpp"

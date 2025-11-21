@@ -3,12 +3,16 @@
 
 void intakeForward() {
 	intakeMotor.move(127);
+	intakeMotor2.move(127);
 }
 
 void intakeBackward() {
 intakeMotor.move(-127);
+intakeMotor2.move(-127);
+
 }
 
 void intakeStop() {
 intakeMotor.move(0);
+intakeMotor2.move(0);
 }

@@ -4,6 +4,7 @@
 #include "screen/init.hpp"
 #include "auton/movement.hpp"
 #include "intake/pneumatics.hpp"
+#include "intake/main.hpp"
 #include "globals.hpp"
 
 void startOdometryTask();
@@ -76,45 +77,51 @@ void autonomous() {
 	
 	switch(auton) {
 		case 0: // Red Left - AWP
-			moveBackward(100, 100);
-			// intake balls in here
-			// TODO: remove
-			pros::delay(1000);
-			moveForward(100, 400);
-			// implement functionaliy for outake here (ts will send balls into the bridge)
-			// wait till outtake is done
-			// todo: remove this
-			pros::delay(5000);
-			moveBackward(100, 100);
-			turnRight(80, 400);
-			moveForward(100, 400);
-			// dispense balls here again..
+			intakeBackward();
+			pros::delay(500);
+			moveForward(1, 2000); 
+			
+			// // Score preload
+			// intakeForward();
+			// pros::delay(1000);
+			
+			// moveBackward(36, 2000); // Back up to align
+			// turnRight(90, 1000);
+			// moveForward(24, 1500); // Touch ladder/bar
 			break;
 		
-		case 1: // Red Right - Score
-			moveForward(100, 1200);
-			turnLeft(80, 500);
-			moveBackward(100, 800);
+		case 1: // Red Right - Rush Center
+			moveForward(32, 1500); // Rush to Center Goal (~1.5 tiles)
+			intakeForward(); // Grab block
+			moveBackward(24, 1500); // Retreat
 			break;
 		
-		case 2: // Blue Left - Score
-			moveForward(100, 1200);
-			turnRight(80, 500);
-			moveBackward(100, 800);
+		case 2: // Blue Left - Rush Center
+			moveForward(32, 1500);
+			intakeForward();
+			moveBackward(24, 1500);
 			break;
 		
 		case 3: // Blue Right - AWP
-			moveForward(100, 200);
-			// sleep 2
+			intakeBackward();
+			pros::delay(500);
+			moveForward(46, 2000);
+			intakeStop();
+			intakeForward(); // Score
 			pros::delay(1000);
-			turnLeft(80, 500);
-			// moveForward(100, 1000);
+			moveBackward(36, 2000);
+			turnLeft(90, 1000);
+			moveForward(24, 1500);
 			break;
 		
 		case 4: // Skills Run
-			moveForward(127, 2000);
-			turnRight(100, 1000);
-			moveForward(127, 2000);
+			moveForward(12, 1000); // Score Alliance
+			moveBackward(12, 1000);
+			turnRight(90, 1000);
+			moveForward(48, 2000); // Cross field
+			turnLeft(90, 1000);
+			moveForward(24, 1500); // Push into goal
+			moveBackward(24, 1500);
 			break;
 		
 		case 5: // Do Nothing
@@ -163,47 +170,19 @@ void opcontrol() {
 		static pros::Motor r3(PORT_RIGHT_3);
 		
 		bool motor_err = false;
+		std::string err_msg = "Err:";
 		
-		if (!l1.is_installed()) { 
-			printf("L1 (%d) DC!\n", PORT_LEFT_1); 
-			master.print(0, 0, "Err: L1 (%d)", PORT_LEFT_1); 
-			master.rumble("."); 
-			motor_err = true;
-		} else if (!l2.is_installed()) { 
-			printf("L2 (%d) DC!\n", PORT_LEFT_2); 
-			master.print(0, 0, "Err: L2 (%d)", PORT_LEFT_2); 
-			master.rumble("."); 
-			motor_err = true;
-		} else if (!l3.is_installed()) { 
-			printf("L3 (%d) DC!\n", PORT_LEFT_3); 
-			master.print(0, 0, "Err: L3 (%d)", PORT_LEFT_3); 
-			master.rumble("."); 
-			motor_err = true;
-		} else if (!r1.is_installed()) { 
-			printf("R1 (%d) DC!\n", PORT_RIGHT_1); 
-			master.print(0, 0, "Err: R1 (%d)", PORT_RIGHT_1); 
-			master.rumble("."); 
-			motor_err = true;
-		} else if (!r2.is_installed()) { 
-			printf("R2 (%d) DC!\n", PORT_RIGHT_2); 
-			master.print(0, 0, "Err: R2 (%d)", PORT_RIGHT_2); 
-			master.rumble("."); 
-			motor_err = true;
-		} else if (!r3.is_installed()) { 
-			printf("R3 (%d) DC!\n", PORT_RIGHT_3); 
-			master.print(0, 0, "Err: R3 (%d)", PORT_RIGHT_3); 
-			motor_err = true;
+		if (!l1.is_installed()) { printf("L1 (%d) DC!\n", PORT_LEFT_1); err_msg += "L1 "; motor_err = true; }
+		if (!l2.is_installed()) { printf("L2 (%d) DC!\n", PORT_LEFT_2); err_msg += "L2 "; motor_err = true; }
+		if (!l3.is_installed()) { printf("L3 (%d) DC!\n", PORT_LEFT_3); err_msg += "L3 "; motor_err = true; }
+		if (!r1.is_installed()) { printf("R1 (%d) DC!\n", PORT_RIGHT_1); err_msg += "R1 "; motor_err = true; }
+		if (!r2.is_installed()) { printf("R2 (%d) DC!\n", PORT_RIGHT_2); err_msg += "R2 "; motor_err = true; }
+		if (!r3.is_installed()) { printf("R3 (%d) DC!\n", PORT_RIGHT_3); err_msg += "R3 "; motor_err = true; }
+		
+		if (motor_err) {
+			master.print(0, 0, "%s", err_msg.c_str());
+			master.rumble(".");
 		}
-		if(motor_err) {
-			master.rumble("."); 
-		}
-		 // ignore intake
-		//  else if (!intakeMotor.is_installed()) { 
-		// 	printf("Intake (%d) DC!\n", PORT_INTAKE); 
-		// 	master.print(0, 0, "Err: Intake"); 
-		// 	master.rumble("."); 
-		// 	motor_err = true;
-		// }
 		
 		if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)) {
 			telemToggle = !telemToggle; // Toggle telemetry display
@@ -228,11 +207,11 @@ void opcontrol() {
 			}
 		}
 		if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
-			intakeMotor.move(127); // Intake forward
+			intakeForward();
 		} else if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) {
-			intakeMotor.move(-127); // Intake backward
+			intakeBackward();
 		} else {
-			intakeMotor.move(0); // Intake stop
+			intakeStop();
 		}
 
 		pros::delay(20);               // Run for 20 ms then update

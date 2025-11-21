@@ -1,36 +1,89 @@
 #include "main.h"
 #include "auton/movement.hpp"
 #include "globals.hpp"
+#include <cmath>
 
-void moveForward(int speed, int duration_ms) {
-	left_mg.move(speed);
-	right_mg.move(speed);
-	pros::delay(duration_ms);
+// Constants
+constexpr float WHEEL_DIAM = 2.75;
+constexpr float GEAR_RATIO = 1.0; // Change if geared
+constexpr float TICKS_PER_REV = 360.0; // V5 Motor Degrees
+
+void moveForward(float distance_in, int timeout_ms) {
+	// Reset encoders
+	left_mg.tare_position();
+	right_mg.tare_position();
+	
+	// Constants for 2.75" Omni Wheels, Direct Drive
+	// Circumference = 2.75 * pi = 8.639 in
+	// 360 ticks / 8.639 in = 41.67 ticks per inch
+	float ticks_per_inch = (360.0 / (WHEEL_DIAM * M_PI)) * GEAR_RATIO;
+	float target_ticks = distance_in * ticks_per_inch;
+	
+	printf("MoveFwd: Dist=%.1f Target=%.1f\n", distance_in, target_ticks);
+	
+	long start_time = pros::millis();
+	
+	// P-Loop constants
+	float kP = 2.0; // Tuning value: higher = faster/oscillates, lower = smoother
+	
+	while (true) {
+		// Get average position
+		// Note: PROS MotorGroup get_position returns average
+		double current_pos = (left_mg.get_position() + right_mg.get_position()) / 2.0;
+		
+		float error = target_ticks - current_pos;
+		
+		// Exit if close enough or timeout
+		if (std::abs(error) < 10 || (pros::millis() - start_time > timeout_ms)) {
+			break;
+		}
+		
+		// Calculate speed
+		float speed = error * kP;
+		
+		// Cap speed to max +/- 127
+		if (speed > 127) speed = 127;
+		if (speed < -127) speed = -127;
+		
+		// Min speed to overcome friction
+		if (std::abs(speed) < 20) speed = (speed > 0) ? 20 : -20;
+		
+		left_mg.move(speed);
+		right_mg.move(speed);
+		
+		pros::delay(10);
+	}
+	
+	// Stop
 	left_mg.move(0);
 	right_mg.move(0);
+	printf("Move Done. Err=%.1f\n", target_ticks - (left_mg.get_position() + right_mg.get_position())/2.0);
 }
 
-void moveBackward(int speed, int duration_ms) {
-	left_mg.move(-speed);
-	right_mg.move(-speed);
-	pros::delay(duration_ms);
-	left_mg.move(0);
-	right_mg.move(0);
+void moveBackward(float distance_in, int timeout_ms) {
+	moveForward(-distance_in, timeout_ms);
 }
 
+void turnTo(float heading_deg, int timeout_ms) {
+	// Placeholder or IMU turn implementation
+	// chassis.turnToHeading(heading_deg, timeout_ms); 
+	// Disabled chassis use
+}
+
+// Legacy wrappers
 void turnLeft(int speed, int duration_ms) {
-	left_mg.move(speed);
-	right_mg.move(-speed);
+	left_mg.move_velocity(speed * 4.5);
+	right_mg.move_velocity(-speed * 4.5);
 	pros::delay(duration_ms);
-	left_mg.move(0);
-	right_mg.move(0);
+	left_mg.move_velocity(0);
+	right_mg.move_velocity(0);
 }
 
 void turnRight(int speed, int duration_ms) {
-	left_mg.move(-speed);
-	right_mg.move(speed);
+	left_mg.move_velocity(-speed * 4.5);
+	right_mg.move_velocity(speed * 4.5);
 	pros::delay(duration_ms);
-	left_mg.move(0);
-	right_mg.move(0);
+	left_mg.move_velocity(0);
+	right_mg.move_velocity(0);
 }
 

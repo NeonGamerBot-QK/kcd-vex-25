@@ -1,5 +1,6 @@
 #include "robodash/api.h"
 #include "main.h"
+#include "intake/main.hpp"
 
 extern pros::Motor intakeMotor;
 
@@ -8,12 +9,27 @@ double odom_get_y();
 double odom_get_theta_deg();
 
 rd_view_t *homeview = rd_view_create("Home");
+rd_view_t *logview = rd_view_create("Log");
 rd_view_t *selector_view = rd_view_create("Auton Select");
 static lv_obj_t *stat_label = nullptr;
 static lv_obj_t *map_canvas = nullptr;
 static lv_obj_t *position_label = nullptr;
+static lv_obj_t *log_ta = nullptr;
 
 int selected_auton = 0;
+
+void screen_log(const char* fmt, ...) {
+	if (log_ta == nullptr) return;
+	
+	va_list args;
+	va_start(args, fmt);
+	char buf[128];
+	vsnprintf(buf, sizeof(buf), fmt, args);
+	va_end(args);
+	
+	lv_textarea_add_text(log_ta, buf);
+	lv_textarea_add_text(log_ta, "\n");
+}
 
 static void draw_field_map(lv_obj_t *canvas) {
 	lv_canvas_fill_bg(canvas, lv_color_hex(0x404040), LV_OPA_COVER);
@@ -80,20 +96,22 @@ void update_stats_task(void* param) {
 			#ifdef SHOW_COLOR_ON_SCREEN
 			double hue = colorSensor.get_hue();
 			snprintf(buf, sizeof(buf), 
-				"Batt: %.0f%%\nDT: %.0fC\nIntk: %.0fC\nHue: %.0f\nMode: %s",
+				"Batt: %.0f%% DT: %.0fC\nIntk: %.0fC Hue: %.0f\nMode: %s\nSort: %s",
 				battery,
 				dt_temp_left,
 				intake_temp,
 				hue,
-				pros::competition::is_autonomous() ? "Auto" : "Driver"
+				pros::competition::is_autonomous() ? "Auto" : "Driver",
+				getIntakeModeName()
 			);
 			#else
 			snprintf(buf, sizeof(buf), 
-				"Batt: %.0f%%\nDT: %.0fC\nIntk: %.0fC\nMode: %s",
+				"Batt: %.0f%% DT: %.0fC\nIntk: %.0fC\nMode: %s\nSort: %s",
 				battery,
 				dt_temp_left,
 				intake_temp,
-				pros::competition::is_autonomous() ? "Auto" : "Driver"
+				pros::competition::is_autonomous() ? "Auto" : "Driver",
+				getIntakeModeName()
 			);
 			#endif
 			
@@ -137,6 +155,14 @@ void init_homeview() {
 	static pros::Task stats_task(update_stats_task, nullptr, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "Stats");
 }
 
+void init_logview() {
+	log_ta = lv_textarea_create(rd_view_obj(logview));
+	lv_obj_set_size(log_ta, 460, 220);
+	lv_obj_align(log_ta, LV_ALIGN_CENTER, 0, 0);
+	lv_textarea_set_text(log_ta, "System Ready.\n");
+	lv_textarea_set_cursor_pos(log_ta, LV_TEXTAREA_CURSOR_LAST);
+}
+
 void auton_screen_init() {
 	rd_view_alert(homeview, "Auton Mode");
 }
@@ -173,5 +199,6 @@ int get_selected_auton() {
 void screen_init() {
 	init_auton_selector();
 	init_homeview();
+	init_logview();
 	rd_view_focus(selector_view);
 }

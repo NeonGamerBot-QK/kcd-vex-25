@@ -6,17 +6,17 @@
 // Port Definitions
 constexpr int PORT_LEFT_1 = 13;
 constexpr int PORT_LEFT_2 = 4;
-constexpr int PORT_LEFT_3 = 6;
+constexpr int PORT_LEFT_3 = 10;
 
 constexpr int PORT_RIGHT_1 = 1;
 constexpr int PORT_RIGHT_2 = 15;
 constexpr int PORT_RIGHT_3 = 3;
 
-constexpr int PORT_INTAKE = 7;
-constexpr int PORT_INTAKE2 = 2;
-constexpr int PORT_INTAKE3 = 5;
-constexpr int PORT_OUTTAKE = 8;
-constexpr int PORT_COLOR_OPTICAL = 9;
+constexpr int PORT_INTAKE = 6; // bottom
+constexpr int PORT_INTAKE2 = 7;
+constexpr int PORT_INTAKE3 = 2;
+constexpr int PORT_OUTTAKE = 11;
+constexpr int PORT_COLOR_OPTICAL = 19;
 
 // Config
 #define SHOW_COLOR_ON_SCREEN 1

@@ -182,22 +182,24 @@ void opcontrol() {
 		if (motor_err) {
 			master.print(0, 0, "%s", err_msg.c_str());
 			master.rumble(".");
+			// screen_log("Motor Error: %s", err_msg.c_str());
 		}
-		
+		if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_X)) {
+			toggleIntakeMode();
+		}
 		if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)) {
 			telemToggle = !telemToggle; // Toggle telemetry display
 		}
-		if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_DOWN) && !pros::competition::is_connected()) {
-			master.rumble("- -");
-			autonomous();
-		}
+		// if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_DOWN) && !pros::competition::is_connected()) {
+		// 	master.rumble("- -");
+		// 	autonomous();
+		// }
 		
 		if (!motor_err) {
-			double hue = colorSensor.get_hue();
 			
 			if(!telemToggle) {
-				master.print(0, 0, "DT%.0lf|INT%.0lf|T%.0lf  ", drivetrainTemps, 0, theta);
-				master.print(1, 0, "Hue: %.0f      ", hue);
+				// master.print(0, 0, "DT%.0lf|INT%.0lf|T%.0lf  ", drivetrainTemps, 0, theta);
+
 			} else {
 				lemlib::Pose p = chassis.getPose();
 				const char* name = get_auton_name(get_selected_auton());
@@ -206,7 +208,7 @@ void opcontrol() {
 				short_name[4] = '\0';
 				
 				master.print(0, 0, "X:%.0f Y:%.0f %s   ", p.x, p.y, name);
-				master.print(1, 0, "Hue: %.0f      ", hue);
+				// master.print(1, 0, "Hue: %.0f      ", hue);
 			}
 		}
 		if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {

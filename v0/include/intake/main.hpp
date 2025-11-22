@@ -4,5 +4,7 @@
 void intakeForward();
 void intakeBackward();
 void intakeStop();
+void toggleIntakeMode();
+const char* getIntakeModeName();
 
 #endif

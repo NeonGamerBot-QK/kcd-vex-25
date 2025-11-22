@@ -3,3 +3,4 @@
 
 void screen_init();
 int get_selected_auton();
+void screen_log(const char* fmt, ...);

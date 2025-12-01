@@ -151,10 +151,10 @@ void opcontrol() {
 	while (true) {
 		int dir = master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
 		int turn = -master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
-		
+		int strafe = master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X)
 		left_mg.move(dir + turn);
 		right_mg.move(dir - turn);
-		
+		strafe_mg.move(strafe);
 		double drivetrainTemps = left_mg.get_temperature();
 		double theta = fmod(1, 360);
 		if (theta < 0) {
@@ -211,20 +211,8 @@ void opcontrol() {
 				// master.print(1, 0, "Hue: %.0f      ", hue);
 			}
 		}
-		if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
-			intakeForward();
-		} else if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) {
-			intakeBackward();
-		} else {
-			intakeStop();
-		}
-		if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L1)) {
-			outtakeForward();
-		} else if (master.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) {
-			outtakeBackward();
-		} else {
-			outtakeStop();
-		}
+	
+
 		pros::delay(20);               // Run for 20 ms then update
 	}
 }

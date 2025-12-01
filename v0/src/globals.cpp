@@ -8,7 +8,7 @@ pros::Motor intakeMotor2(PORT_INTAKE2);
 pros::Motor intakeMotor3(PORT_INTAKE3);
 pros::Motor outtakeMotor(PORT_OUTTAKE);
 pros::Optical colorSensor(PORT_COLOR_OPTICAL);
-
+pros::Motor strafeMotor(PORT_STRAFE)
 // Drivetrain Settings
 lemlib::Drivetrain drivetrain(&left_mg, &right_mg, 10.0, lemlib::Omniwheel::NEW_275, 450, 2);
 

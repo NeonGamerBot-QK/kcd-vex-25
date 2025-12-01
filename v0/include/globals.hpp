@@ -17,7 +17,7 @@ constexpr int PORT_INTAKE2 = 7;
 constexpr int PORT_INTAKE3 = 2;
 constexpr int PORT_OUTTAKE = 11;
 constexpr int PORT_COLOR_OPTICAL = 19;
-
+constexpr int PORT_STRAFE = 67; // todo: change lol
 // Config
 #define SHOW_COLOR_ON_SCREEN 1
 
@@ -28,6 +28,8 @@ extern pros::Motor intakeMotor2;
 extern pros::Motor intakeMotor3;
 extern pros::Motor outtakeMotor;
 extern pros::Optical colorSensor;
+extern pros::Motor strafeMotor;
+
 
 // LemLib Chassis
 #include "lemlib/api.hpp"

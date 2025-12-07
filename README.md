@@ -9,22 +9,22 @@ We also have a CAD designed by a team member which you can view [here](https://c
 ```
 v0/
 ├── src/
-│   ├── auton/       
-│   ├── intake/       
-│   ├── outtake/      
-│   ├── screen/     
-│   ├── globals.cpp   
-│   ├── main.cpp      
-│   └── odom.cpp     
+│   ├── auton/
+│   ├── intake/
+│   ├── outtake/
+│   ├── screen/
+│   ├── globals.cpp
+│   ├── main.cpp
+│   └── odom.cpp
 ├── include/
-│   ├── auton/       
-│   ├── intake/       
-│   ├── outtake/     
-│   ├── screen/        
-│   ├── globals.hpp   
-│   └── main.h        
-├── firmware/         
-└── static/           
+│   ├── auton/
+│   ├── intake/
+│   ├── outtake/
+│   ├── screen/
+│   ├── globals.hpp
+│   └── main.h
+├── firmware/
+└── static/
 ```
 
 ## Dependencies

@@ -1,724 +1,749 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>VEX Robot Simulator</title>
-	<style>
-		* {
-			margin: 0;
-			padding: 0;
-			box-sizing: border-box;
-		}
-
-		body {
-			font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-			min-height: 100vh;
-			padding: 20px;
-			display: flex;
-			justify-content: center;
-			align-items: center;
-		}
-
-		.container {
-			background: white;
-			border-radius: 12px;
-			box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-			max-width: 1200px;
-			width: 100%;
-			padding: 30px;
-		}
-
-		h1 {
-			color: #333;
-			margin-bottom: 10px;
-			text-align: center;
-		}
-
-		.subtitle {
-			color: #666;
-			text-align: center;
-			margin-bottom: 25px;
-			font-size: 14px;
-		}
-
-		.content {
-			display: grid;
-			grid-template-columns: 1fr 1fr;
-			gap: 30px;
-			margin-bottom: 20px;
-		}
-
-		@media (max-width: 900px) {
-			.content {
-				grid-template-columns: 1fr;
-			}
-		}
-
-		.simulator-section {
-			display: flex;
-			flex-direction: column;
-		}
-
-		.canvas-wrapper {
-			border: 2px solid #ddd;
-			border-radius: 8px;
-			background: #f9f9f9;
-			padding: 15px;
-			flex: 1;
-			display: flex;
-			justify-content: center;
-			align-items: center;
-		}
-
-		canvas {
-			border: 1px solid #ccc;
-			border-radius: 4px;
-			background: white;
-			cursor: crosshair;
-		}
-
-		.controls {
-			display: flex;
-			gap: 10px;
-			margin-top: 15px;
-			flex-wrap: wrap;
-		}
-
-		button {
-			flex: 1;
-			min-width: 100px;
-			padding: 12px 20px;
-			font-size: 14px;
-			font-weight: 600;
-			border: none;
-			border-radius: 6px;
-			cursor: pointer;
-			transition: all 0.3s ease;
-		}
-
-		.btn-start {
-			background: #667eea;
-			color: white;
-		}
-
-		.btn-start:hover {
-			background: #5568d3;
-			transform: translateY(-2px);
-			box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-		}
-
-		.btn-reset {
-			background: #f093fb;
-			color: white;
-		}
-
-		.btn-reset:hover {
-			background: #d870e5;
-			transform: translateY(-2px);
-			box-shadow: 0 5px 15px rgba(240, 147, 251, 0.4);
-		}
-
-		.btn-pause {
-			background: #ffa500;
-			color: white;
-		}
-
-		.btn-pause:hover {
-			background: #ff8c00;
-			transform: translateY(-2px);
-		}
-
-		.info-panel {
-			background: #f5f7fa;
-			border-radius: 8px;
-			padding: 20px;
-			border-left: 4px solid #667eea;
-		}
-
-		.info-row {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			padding: 10px 0;
-			border-bottom: 1px solid #ddd;
-			font-size: 14px;
-		}
-
-		.info-row:last-child {
-			border-bottom: none;
-		}
-
-		.label {
-			color: #666;
-			font-weight: 600;
-		}
-
-		.value {
-			color: #333;
-			font-weight: 500;
-			font-family: 'Courier New', monospace;
-		}
-
-		.timeline {
-			margin-top: 25px;
-		}
-
-		.timeline-title {
-			font-weight: 600;
-			color: #333;
-			margin-bottom: 15px;
-			font-size: 14px;
-		}
-
-		.command-list {
-			max-height: 400px;
-			overflow-y: auto;
-		}
-
-		.command {
-			background: white;
-			border: 1px solid #ddd;
-			border-radius: 6px;
-			padding: 12px;
-			margin-bottom: 10px;
-			font-size: 13px;
-			font-family: 'Courier New', monospace;
-			color: #333;
-			transition: all 0.2s ease;
-		}
-
-		.command.active {
-			background: #667eea;
-			color: white;
-			border-color: #667eea;
-			box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
-		}
-
-		.command.completed {
-			background: #d4edda;
-			border-color: #28a745;
-			color: #155724;
-		}
-
-		.timestamp {
-			display: inline-block;
-			background: rgba(0, 0, 0, 0.1);
-			padding: 2px 6px;
-			border-radius: 3px;
-			margin-right: 8px;
-			font-size: 11px;
-		}
-
-		.speed-control {
-			margin-top: 20px;
-		}
-
-		.speed-label {
-			font-weight: 600;
-			color: #333;
-			margin-bottom: 8px;
-			font-size: 14px;
-			display: flex;
-			justify-content: space-between;
-		}
-
-		input[type="range"] {
-			width: 100%;
-			height: 6px;
-			border-radius: 3px;
-			background: #ddd;
-			outline: none;
-			-webkit-appearance: none;
-		}
-
-		input[type="range"]::-webkit-slider-thumb {
-			-webkit-appearance: none;
-			appearance: none;
-			width: 18px;
-			height: 18px;
-			border-radius: 50%;
-			background: #667eea;
-			cursor: pointer;
-			transition: all 0.2s ease;
-		}
-
-		input[type="range"]::-webkit-slider-thumb:hover {
-			background: #5568d3;
-			transform: scale(1.2);
-		}
-
-		input[type="range"]::-moz-range-thumb {
-			width: 18px;
-			height: 18px;
-			border-radius: 50%;
-			background: #667eea;
-			cursor: pointer;
-			border: none;
-		}
-
-		.stats {
-			margin-top: 15px;
-			display: grid;
-			grid-template-columns: 1fr 1fr;
-			gap: 10px;
-		}
-
-		.stat-box {
-			background: white;
-			border: 1px solid #ddd;
-			border-radius: 6px;
-			padding: 12px;
-			text-align: center;
-		}
-
-		.stat-label {
-			font-size: 12px;
-			color: #666;
-			margin-bottom: 5px;
-		}
-
-		.stat-value {
-			font-size: 18px;
-			font-weight: 700;
-			color: #667eea;
-			font-family: 'Courier New', monospace;
-		}
-
-		.auton-select {
-			margin-bottom: 20px;
-		}
-
-		.auton-select label {
-			display: block;
-			font-weight: 600;
-			color: #333;
-			margin-bottom: 8px;
-			font-size: 14px;
-		}
-
-		.auton-select select {
-			width: 100%;
-			padding: 10px;
-			border: 1px solid #ddd;
-			border-radius: 6px;
-			font-size: 14px;
-			background: white;
-			cursor: pointer;
-		}
-
-		.debug-log {
-			background: #1e1e1e;
-			color: #0f0;
-			border-radius: 6px;
-			padding: 12px;
-			font-family: 'Courier New', monospace;
-			font-size: 12px;
-			max-height: 300px;
-			overflow-y: auto;
-			line-height: 1.5;
-		}
-
-		.log-entry {
-			margin: 2px 0;
-		}
-	</style>
-</head>
-<body>
-	<div class="container">
-		<h1>🤖 VEX Robot Autonomous Simulator</h1>
-		<p class="subtitle">Watch your autonomous routine come to life in real-time</p>
-
-		<div class="auton-select">
-			<label for="autonSelect">Select Autonomous Routine:</label>
-			<select id="autonSelect">
-				<option value="0">Red Left (AWP)</option>
-				<option value="1" selected>Red Right (Rush Center)</option>
-				<option value="2">Blue Left (Rush Center)</option>
-				<option value="3">Blue Right (AWP)</option>
-				<option value="4">Skills Run</option>
-				<option value="5">Do Nothing</option>
-			</select>
-		</div>
-
-		<div class="content">
-			<div class="simulator-section">
-				<div class="canvas-wrapper">
-					<canvas id="canvas" width="500" height="500"></canvas>
-				</div>
-				<div class="controls">
-					<button class="btn-start" id="startBtn">▶ Start</button>
-					<button class="btn-pause" id="pauseBtn">⏸ Pause</button>
-					<button class="btn-reset" id="resetBtn">↻ Reset</button>
-				</div>
-				<div class="speed-control">
-					<div class="speed-label">
-						<span>Simulation Speed</span>
-						<span id="speedValue">1x</span>
-					</div>
-					<input type="range" id="speedSlider" min="0.25" max="3" step="0.25" value="1">
-				</div>
-			</div>
-
-			<div class="info-panel">
-				<div class="info-row">
-					<span class="label">Position X:</span>
-					<span class="value" id="posX">0.00 in</span>
-				</div>
-				<div class="info-row">
-					<span class="label">Position Y:</span>
-					<span class="value" id="posY">0.00 in</span>
-				</div>
-				<div class="info-row">
-					<span class="label">Heading:</span>
-					<span class="value" id="heading">0.00°</span>
-				</div>
-				<div class="info-row">
-					<span class="label">Elapsed Time:</span>
-					<span class="value" id="time">0.0s</span>
-				</div>
-
-				<div class="timeline">
-					<div class="timeline-title">Command Timeline</div>
-					<div class="command-list" id="commandList"></div>
-				</div>
-
-				<div class="stats">
-					<div class="stat-box">
-						<div class="stat-label">Total Distance</div>
-						<div class="stat-value" id="totalDistance">0 in</div>
-					</div>
-					<div class="stat-box">
-						<div class="stat-label">Total Rotation</div>
-						<div class="stat-value" id="totalRotation">0°</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<script>
-		// Canvas and context
-		const canvas = document.getElementById('canvas');
-		const ctx = canvas.getContext('2d');
-
-		// UI Elements
-		const startBtn = document.getElementById('startBtn');
-		const pauseBtn = document.getElementById('pauseBtn');
-		const resetBtn = document.getElementById('resetBtn');
-		const speedSlider = document.getElementById('speedSlider');
-		const speedValue = document.getElementById('speedValue');
-		const autonSelect = document.getElementById('autonSelect');
-
-		// Robot state
-		let robot = {
-			x: 250,
-			y: 250,
-			heading: 0, // degrees, 0 = up, 90 = right
-			trail: []
-		};
-
-		let simulation = {
-			running: false,
-			paused: false,
-			currentCommandIndex: 0,
-			elapsedTime: 0,
-			commands: [],
-			speed: 1,
-			totalDistance: 0,
-			totalRotation: 0
-		};
-
-		// Constants
-		const PIXELS_PER_INCH = 10;
-		const FIELD_SIZE = 144; // inches (12 feet)
-
-		// Define autonomous routines
-		const autonomousRoutines = {
-			0: [ // Red Left
-				{ type: 'intakeBackward', duration: 0 },
-				{ type: 'delay', duration: 500 },
-				{ type: 'moveForward', distance: 1, timeout: 2000 }
-			],
-			1: [ // Red Right (our updated routine)
-				{ type: 'moveForward', distance: 32, timeout: 2000 },
-				{ type: 'delay', duration: 3000 },
-				{ type: 'moveBackward', distance: 6, timeout: 1500 },
-				{ type: 'turnRight', degrees: 25, timeout: 1000 },
-				{ type: 'moveForward', distance: 24, timeout: 2000 }
-			],
-			2: [ // Blue Left
-				{ type: 'moveForward', distance: 32, timeout: 1500 },
-				{ type: 'intakeForward', duration: 0 },
-				{ type: 'moveBackward', distance: 24, timeout: 1500 }
-			],
-			3: [ // Blue Right
-				{ type: 'intakeBackward', duration: 0 },
-				{ type: 'delay', duration: 500 },
-				{ type: 'moveForward', distance: 46, timeout: 2000 },
-				{ type: 'intakeStop', duration: 0 },
-				{ type: 'intakeForward', duration: 0 },
-				{ type: 'delay', duration: 1000 },
-				{ type: 'moveBackward', distance: 36, timeout: 2000 },
-				{ type: 'turnLeft', degrees: 90, timeout: 1000 },
-				{ type: 'moveForward', distance: 24, timeout: 1500 }
-			],
-			4: [ // Skills
-				{ type: 'moveForward', distance: 12, timeout: 1000 },
-				{ type: 'moveBackward', distance: 12, timeout: 1000 },
-				{ type: 'turnRight', degrees: 90, timeout: 1000 },
-				{ type: 'moveForward', distance: 48, timeout: 2000 },
-				{ type: 'turnLeft', degrees: 90, timeout: 1000 },
-				{ type: 'moveForward', distance: 24, timeout: 1500 },
-				{ type: 'moveBackward', distance: 24, timeout: 1500 }
-			],
-			5: [] // Do Nothing
-		};
-
-		// Initialize simulation
-		function loadAutonomous(autonId) {
-			simulation.commands = autonomousRoutines[autonId].map((cmd, idx) => ({
-				...cmd,
-				id: idx,
-				completed: false,
-				active: false
-			}));
-			resetSimulation();
-			renderCommandList();
-		}
-
-		function resetSimulation() {
-			robot = { x: 250, y: 250, heading: 0, trail: [] };
-			simulation.running = false;
-			simulation.paused = false;
-			simulation.currentCommandIndex = 0;
-			simulation.elapsedTime = 0;
-			simulation.totalDistance = 0;
-			simulation.totalRotation = 0;
-			startBtn.textContent = '▶ Start';
-			updateUI();
-			draw();
-		}
-
-		function renderCommandList() {
-			const list = document.getElementById('commandList');
-			list.innerHTML = '';
-			simulation.commands.forEach(cmd => {
-				const div = document.createElement('div');
-				div.className = 'command';
-				if (cmd.completed) div.classList.add('completed');
-				if (cmd.active) div.classList.add('active');
-				
-				let description = '';
-				switch(cmd.type) {
-					case 'moveForward':
-						description = `moveForward(${cmd.distance}", ${cmd.timeout}ms)`;
-						break;
-					case 'moveBackward':
-						description = `moveBackward(${cmd.distance}", ${cmd.timeout}ms)`;
-						break;
-					case 'turnRight':
-						description = `turnRight(${cmd.degrees}°, ${cmd.timeout}ms)`;
-						break;
-					case 'turnLeft':
-						description = `turnLeft(${cmd.degrees}°, ${cmd.timeout}ms)`;
-						break;
-					case 'delay':
-						description = `delay(${cmd.duration}ms)`;
-						break;
-					case 'intakeForward':
-						description = `intakeForward()`;
-						break;
-					case 'intakeBackward':
-						description = `intakeBackward()`;
-						break;
-					case 'intakeStop':
-						description = `intakeStop()`;
-						break;
-					default:
-						description = cmd.type;
-				}
-				
-				div.innerHTML = `<span class="timestamp">${cmd.id + 1}</span>${description}`;
-				list.appendChild(div);
-			});
-		}
-
-		function updateUI() {
-			document.getElementById('posX').textContent = (robot.x / PIXELS_PER_INCH).toFixed(2) + ' in';
-			document.getElementById('posY').textContent = ((FIELD_SIZE - robot.y / PIXELS_PER_INCH)).toFixed(2) + ' in';
-			document.getElementById('heading').textContent = (robot.heading % 360).toFixed(2) + '°';
-			document.getElementById('time').textContent = (simulation.elapsedTime / 1000).toFixed(1) + 's';
-			document.getElementById('totalDistance').textContent = simulation.totalDistance.toFixed(0) + ' in';
-			document.getElementById('totalRotation').textContent = (simulation.totalRotation % 360).toFixed(0) + '°';
-		}
-
-		function executeCommand(cmd, deltaTime) {
-			const pixelsPerMs = 0.03 * simulation.speed; // ~36 in/s
-			
-			switch(cmd.type) {
-				case 'moveForward':
-					moveRobot(cmd.distance, deltaTime);
-					break;
-				case 'moveBackward':
-					moveRobot(-cmd.distance, deltaTime);
-					break;
-				case 'turnRight':
-					rotateRobot(cmd.degrees, deltaTime, cmd.timeout);
-					break;
-				case 'turnLeft':
-					rotateRobot(-cmd.degrees, deltaTime, cmd.timeout);
-					break;
-				case 'delay':
-					// No movement during delay
-					break;
-			}
-		}
-
-		function moveRobot(distance, deltaTime) {
-			const speed = 36; // inches per second
-			const movementThisFrame = (speed * deltaTime / 1000) * simulation.speed;
-			const directionFactor = distance > 0 ? 1 : -1;
-			
-			const radians = (robot.heading - 90) * Math.PI / 180;
-			robot.x += Math.cos(radians) * movementThisFrame * directionFactor;
-			robot.y += Math.sin(radians) * movementThisFrame * directionFactor;
-			
-			simulation.totalDistance += Math.abs(movementThisFrame);
-			robot.trail.push({ x: robot.x, y: robot.y });
-		}
-
-		function rotateRobot(degrees, deltaTime, timeout) {
-			const degreesPerSecond = (degrees / (timeout / 1000));
-			const rotationThisFrame = degreesPerSecond * deltaTime / 1000 * simulation.speed;
-			robot.heading += rotationThisFrame;
-			simulation.totalRotation += Math.abs(rotationThisFrame);
-		}
-
-		function draw() {
-			ctx.fillStyle = '#f9f9f9';
-			ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-			// Grid
-			ctx.strokeStyle = '#ddd';
-			ctx.lineWidth = 1;
-			for (let i = 0; i <= FIELD_SIZE; i += 12) {
-				const x = i * PIXELS_PER_INCH;
-				const y = i * PIXELS_PER_INCH;
-				ctx.beginPath();
-				ctx.moveTo(x, 0);
-				ctx.lineTo(x, canvas.height);
-				ctx.stroke();
-				ctx.beginPath();
-				ctx.moveTo(0, y);
-				ctx.lineTo(canvas.width, y);
-				ctx.stroke();
-			}
-
-			// Trail
-			if (robot.trail.length > 1) {
-				ctx.strokeStyle = 'rgba(102, 126, 234, 0.5)';
-				ctx.lineWidth = 2;
-				ctx.beginPath();
-				ctx.moveTo(robot.trail[0].x, robot.trail[0].y);
-				for (let i = 1; i < robot.trail.length; i++) {
-					ctx.lineTo(robot.trail[i].x, robot.trail[i].y);
-				}
-				ctx.stroke();
-			}
-
-			// Robot
-			const robotSize = 15;
-			ctx.fillStyle = '#667eea';
-			ctx.beginPath();
-			ctx.arc(robot.x, robot.y, robotSize, 0, Math.PI * 2);
-			ctx.fill();
-
-			// Robot heading indicator
-			ctx.strokeStyle = '#fff';
-			ctx.lineWidth = 3;
-			const radians = (robot.heading - 90) * Math.PI / 180;
-			const headingLength = robotSize * 1.5;
-			ctx.beginPath();
-			ctx.moveTo(robot.x, robot.y);
-			ctx.lineTo(
-				robot.x + Math.cos(radians) * headingLength,
-				robot.y + Math.sin(radians) * headingLength
-			);
-			ctx.stroke();
-
-			// Field boundary
-			ctx.strokeStyle = '#333';
-			ctx.lineWidth = 2;
-			ctx.strokeRect(0, 0, canvas.width, canvas.height);
-		}
-
-		function animate(currentTime) {
-			if (!simulation.running || simulation.paused) {
-				requestAnimationFrame(animate);
-				return;
-			}
-
-			const deltaTime = 16; // ~60fps
-
-			if (simulation.currentCommandIndex < simulation.commands.length) {
-				const cmd = simulation.commands[simulation.currentCommandIndex];
-				cmd.active = true;
-				
-				executeCommand(cmd, deltaTime);
-				simulation.elapsedTime += deltaTime;
-
-				// Check if command is complete
-				if (simulation.elapsedTime >= cmd.timeout || cmd.type === 'delay' && simulation.elapsedTime >= cmd.duration) {
-					cmd.completed = true;
-					cmd.active = false;
-					simulation.currentCommandIndex++;
-					simulation.elapsedTime = 0;
-					renderCommandList();
-				}
-			} else {
-				simulation.running = false;
-				startBtn.textContent = '▶ Start';
-			}
-
-			updateUI();
-			draw();
-			requestAnimationFrame(animate);
-		}
-
-		// Event listeners
-		startBtn.addEventListener('click', () => {
-			if (!simulation.running) {
-				simulation.running = true;
-				simulation.paused = false;
-				startBtn.textContent = '⏸ Pause';
-				pauseBtn.style.display = 'block';
-				animate();
-			}
-		});
-
-		pauseBtn.addEventListener('click', () => {
-			simulation.paused = !simulation.paused;
-			pauseBtn.textContent = simulation.paused ? '▶ Resume' : '⏸ Pause';
-		});
-
-		resetBtn.addEventListener('click', () => {
-			loadAutonomous(parseInt(autonSelect.value));
-		});
-
-		speedSlider.addEventListener('input', (e) => {
-			simulation.speed = parseFloat(e.target.value);
-			speedValue.textContent = simulation.speed.toFixed(2) + 'x';
-		});
-
-		autonSelect.addEventListener('change', (e) => {
-			loadAutonomous(parseInt(e.target.value));
-		});
-
-		// Initialize
-		loadAutonomous(1);
-		draw();
-	</script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VEX Robot Simulator</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        max-width: 1200px;
+        width: 100%;
+        padding: 30px;
+      }
+
+      h1 {
+        color: #333;
+        margin-bottom: 10px;
+        text-align: center;
+      }
+
+      .subtitle {
+        color: #666;
+        text-align: center;
+        margin-bottom: 25px;
+        font-size: 14px;
+      }
+
+      .content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        margin-bottom: 20px;
+      }
+
+      @media (max-width: 900px) {
+        .content {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .simulator-section {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .canvas-wrapper {
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        background: #f9f9f9;
+        padding: 15px;
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      canvas {
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background: white;
+        cursor: crosshair;
+      }
+
+      .controls {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+        flex-wrap: wrap;
+      }
+
+      button {
+        flex: 1;
+        min-width: 100px;
+        padding: 12px 20px;
+        font-size: 14px;
+        font-weight: 600;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .btn-start {
+        background: #667eea;
+        color: white;
+      }
+
+      .btn-start:hover {
+        background: #5568d3;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+      }
+
+      .btn-reset {
+        background: #f093fb;
+        color: white;
+      }
+
+      .btn-reset:hover {
+        background: #d870e5;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(240, 147, 251, 0.4);
+      }
+
+      .btn-pause {
+        background: #ffa500;
+        color: white;
+      }
+
+      .btn-pause:hover {
+        background: #ff8c00;
+        transform: translateY(-2px);
+      }
+
+      .info-panel {
+        background: #f5f7fa;
+        border-radius: 8px;
+        padding: 20px;
+        border-left: 4px solid #667eea;
+      }
+
+      .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid #ddd;
+        font-size: 14px;
+      }
+
+      .info-row:last-child {
+        border-bottom: none;
+      }
+
+      .label {
+        color: #666;
+        font-weight: 600;
+      }
+
+      .value {
+        color: #333;
+        font-weight: 500;
+        font-family: "Courier New", monospace;
+      }
+
+      .timeline {
+        margin-top: 25px;
+      }
+
+      .timeline-title {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 14px;
+      }
+
+      .command-list {
+        max-height: 400px;
+        overflow-y: auto;
+      }
+
+      .command {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 10px;
+        font-size: 13px;
+        font-family: "Courier New", monospace;
+        color: #333;
+        transition: all 0.2s ease;
+      }
+
+      .command.active {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+        box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
+      }
+
+      .command.completed {
+        background: #d4edda;
+        border-color: #28a745;
+        color: #155724;
+      }
+
+      .timestamp {
+        display: inline-block;
+        background: rgba(0, 0, 0, 0.1);
+        padding: 2px 6px;
+        border-radius: 3px;
+        margin-right: 8px;
+        font-size: 11px;
+      }
+
+      .speed-control {
+        margin-top: 20px;
+      }
+
+      .speed-label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+        font-size: 14px;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      input[type="range"] {
+        width: 100%;
+        height: 6px;
+        border-radius: 3px;
+        background: #ddd;
+        outline: none;
+        -webkit-appearance: none;
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #667eea;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      input[type="range"]::-webkit-slider-thumb:hover {
+        background: #5568d3;
+        transform: scale(1.2);
+      }
+
+      input[type="range"]::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #667eea;
+        cursor: pointer;
+        border: none;
+      }
+
+      .stats {
+        margin-top: 15px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .stat-box {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 12px;
+        text-align: center;
+      }
+
+      .stat-label {
+        font-size: 12px;
+        color: #666;
+        margin-bottom: 5px;
+      }
+
+      .stat-value {
+        font-size: 18px;
+        font-weight: 700;
+        color: #667eea;
+        font-family: "Courier New", monospace;
+      }
+
+      .auton-select {
+        margin-bottom: 20px;
+      }
+
+      .auton-select label {
+        display: block;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+        font-size: 14px;
+      }
+
+      .auton-select select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+        background: white;
+        cursor: pointer;
+      }
+
+      .debug-log {
+        background: #1e1e1e;
+        color: #0f0;
+        border-radius: 6px;
+        padding: 12px;
+        font-family: "Courier New", monospace;
+        font-size: 12px;
+        max-height: 300px;
+        overflow-y: auto;
+        line-height: 1.5;
+      }
+
+      .log-entry {
+        margin: 2px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🤖 VEX Robot Autonomous Simulator</h1>
+      <p class="subtitle">
+        Watch your autonomous routine come to life in real-time
+      </p>
+
+      <div class="auton-select">
+        <label for="autonSelect">Select Autonomous Routine:</label>
+        <select id="autonSelect">
+          <option value="0">Red Left (AWP)</option>
+          <option value="1" selected>Red Right (Rush Center)</option>
+          <option value="2">Blue Left (Rush Center)</option>
+          <option value="3">Blue Right (AWP)</option>
+          <option value="4">Skills Run</option>
+          <option value="5">Do Nothing</option>
+        </select>
+      </div>
+
+      <div class="content">
+        <div class="simulator-section">
+          <div class="canvas-wrapper">
+            <canvas id="canvas" width="500" height="500"></canvas>
+          </div>
+          <div class="controls">
+            <button class="btn-start" id="startBtn">▶ Start</button>
+            <button class="btn-pause" id="pauseBtn">⏸ Pause</button>
+            <button class="btn-reset" id="resetBtn">↻ Reset</button>
+          </div>
+          <div class="speed-control">
+            <div class="speed-label">
+              <span>Simulation Speed</span>
+              <span id="speedValue">1x</span>
+            </div>
+            <input
+              type="range"
+              id="speedSlider"
+              min="0.25"
+              max="3"
+              step="0.25"
+              value="1"
+            />
+          </div>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-row">
+            <span class="label">Position X:</span>
+            <span class="value" id="posX">0.00 in</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Position Y:</span>
+            <span class="value" id="posY">0.00 in</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Heading:</span>
+            <span class="value" id="heading">0.00°</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Elapsed Time:</span>
+            <span class="value" id="time">0.0s</span>
+          </div>
+
+          <div class="timeline">
+            <div class="timeline-title">Command Timeline</div>
+            <div class="command-list" id="commandList"></div>
+          </div>
+
+          <div class="stats">
+            <div class="stat-box">
+              <div class="stat-label">Total Distance</div>
+              <div class="stat-value" id="totalDistance">0 in</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Total Rotation</div>
+              <div class="stat-value" id="totalRotation">0°</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Canvas and context
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+
+      // UI Elements
+      const startBtn = document.getElementById("startBtn");
+      const pauseBtn = document.getElementById("pauseBtn");
+      const resetBtn = document.getElementById("resetBtn");
+      const speedSlider = document.getElementById("speedSlider");
+      const speedValue = document.getElementById("speedValue");
+      const autonSelect = document.getElementById("autonSelect");
+
+      // Robot state
+      let robot = {
+        x: 250,
+        y: 250,
+        heading: 0, // degrees, 0 = up, 90 = right
+        trail: [],
+      };
+
+      let simulation = {
+        running: false,
+        paused: false,
+        currentCommandIndex: 0,
+        elapsedTime: 0,
+        commands: [],
+        speed: 1,
+        totalDistance: 0,
+        totalRotation: 0,
+      };
+
+      // Constants
+      const PIXELS_PER_INCH = 10;
+      const FIELD_SIZE = 144; // inches (12 feet)
+
+      // Define autonomous routines
+      const autonomousRoutines = {
+        0: [
+          // Red Left
+          { type: "intakeBackward", duration: 0 },
+          { type: "delay", duration: 500 },
+          { type: "moveForward", distance: 1, timeout: 2000 },
+        ],
+        1: [
+          // Red Right (our updated routine)
+          { type: "moveForward", distance: 32, timeout: 2000 },
+          { type: "delay", duration: 3000 },
+          { type: "moveBackward", distance: 6, timeout: 1500 },
+          { type: "turnRight", degrees: 25, timeout: 1000 },
+          { type: "moveForward", distance: 24, timeout: 2000 },
+        ],
+        2: [
+          // Blue Left
+          { type: "moveForward", distance: 32, timeout: 1500 },
+          { type: "intakeForward", duration: 0 },
+          { type: "moveBackward", distance: 24, timeout: 1500 },
+        ],
+        3: [
+          // Blue Right
+          { type: "intakeBackward", duration: 0 },
+          { type: "delay", duration: 500 },
+          { type: "moveForward", distance: 46, timeout: 2000 },
+          { type: "intakeStop", duration: 0 },
+          { type: "intakeForward", duration: 0 },
+          { type: "delay", duration: 1000 },
+          { type: "moveBackward", distance: 36, timeout: 2000 },
+          { type: "turnLeft", degrees: 90, timeout: 1000 },
+          { type: "moveForward", distance: 24, timeout: 1500 },
+        ],
+        4: [
+          // Skills
+          { type: "moveForward", distance: 12, timeout: 1000 },
+          { type: "moveBackward", distance: 12, timeout: 1000 },
+          { type: "turnRight", degrees: 90, timeout: 1000 },
+          { type: "moveForward", distance: 48, timeout: 2000 },
+          { type: "turnLeft", degrees: 90, timeout: 1000 },
+          { type: "moveForward", distance: 24, timeout: 1500 },
+          { type: "moveBackward", distance: 24, timeout: 1500 },
+        ],
+        5: [], // Do Nothing
+      };
+
+      // Initialize simulation
+      function loadAutonomous(autonId) {
+        simulation.commands = autonomousRoutines[autonId].map((cmd, idx) => ({
+          ...cmd,
+          id: idx,
+          completed: false,
+          active: false,
+        }));
+        resetSimulation();
+        renderCommandList();
+      }
+
+      function resetSimulation() {
+        robot = { x: 250, y: 250, heading: 0, trail: [] };
+        simulation.running = false;
+        simulation.paused = false;
+        simulation.currentCommandIndex = 0;
+        simulation.elapsedTime = 0;
+        simulation.totalDistance = 0;
+        simulation.totalRotation = 0;
+        startBtn.textContent = "▶ Start";
+        updateUI();
+        draw();
+      }
+
+      function renderCommandList() {
+        const list = document.getElementById("commandList");
+        list.innerHTML = "";
+        simulation.commands.forEach((cmd) => {
+          const div = document.createElement("div");
+          div.className = "command";
+          if (cmd.completed) div.classList.add("completed");
+          if (cmd.active) div.classList.add("active");
+
+          let description = "";
+          switch (cmd.type) {
+            case "moveForward":
+              description = `moveForward(${cmd.distance}", ${cmd.timeout}ms)`;
+              break;
+            case "moveBackward":
+              description = `moveBackward(${cmd.distance}", ${cmd.timeout}ms)`;
+              break;
+            case "turnRight":
+              description = `turnRight(${cmd.degrees}°, ${cmd.timeout}ms)`;
+              break;
+            case "turnLeft":
+              description = `turnLeft(${cmd.degrees}°, ${cmd.timeout}ms)`;
+              break;
+            case "delay":
+              description = `delay(${cmd.duration}ms)`;
+              break;
+            case "intakeForward":
+              description = `intakeForward()`;
+              break;
+            case "intakeBackward":
+              description = `intakeBackward()`;
+              break;
+            case "intakeStop":
+              description = `intakeStop()`;
+              break;
+            default:
+              description = cmd.type;
+          }
+
+          div.innerHTML = `<span class="timestamp">${cmd.id + 1}</span>${description}`;
+          list.appendChild(div);
+        });
+      }
+
+      function updateUI() {
+        document.getElementById("posX").textContent =
+          (robot.x / PIXELS_PER_INCH).toFixed(2) + " in";
+        document.getElementById("posY").textContent =
+          (FIELD_SIZE - robot.y / PIXELS_PER_INCH).toFixed(2) + " in";
+        document.getElementById("heading").textContent =
+          (robot.heading % 360).toFixed(2) + "°";
+        document.getElementById("time").textContent =
+          (simulation.elapsedTime / 1000).toFixed(1) + "s";
+        document.getElementById("totalDistance").textContent =
+          simulation.totalDistance.toFixed(0) + " in";
+        document.getElementById("totalRotation").textContent =
+          (simulation.totalRotation % 360).toFixed(0) + "°";
+      }
+
+      function executeCommand(cmd, deltaTime) {
+        const pixelsPerMs = 0.03 * simulation.speed; // ~36 in/s
+
+        switch (cmd.type) {
+          case "moveForward":
+            moveRobot(cmd.distance, deltaTime);
+            break;
+          case "moveBackward":
+            moveRobot(-cmd.distance, deltaTime);
+            break;
+          case "turnRight":
+            rotateRobot(cmd.degrees, deltaTime, cmd.timeout);
+            break;
+          case "turnLeft":
+            rotateRobot(-cmd.degrees, deltaTime, cmd.timeout);
+            break;
+          case "delay":
+            // No movement during delay
+            break;
+        }
+      }
+
+      function moveRobot(distance, deltaTime) {
+        const speed = 36; // inches per second
+        const movementThisFrame =
+          ((speed * deltaTime) / 1000) * simulation.speed;
+        const directionFactor = distance > 0 ? 1 : -1;
+
+        const radians = ((robot.heading - 90) * Math.PI) / 180;
+        robot.x += Math.cos(radians) * movementThisFrame * directionFactor;
+        robot.y += Math.sin(radians) * movementThisFrame * directionFactor;
+
+        simulation.totalDistance += Math.abs(movementThisFrame);
+        robot.trail.push({ x: robot.x, y: robot.y });
+      }
+
+      function rotateRobot(degrees, deltaTime, timeout) {
+        const degreesPerSecond = degrees / (timeout / 1000);
+        const rotationThisFrame =
+          ((degreesPerSecond * deltaTime) / 1000) * simulation.speed;
+        robot.heading += rotationThisFrame;
+        simulation.totalRotation += Math.abs(rotationThisFrame);
+      }
+
+      function draw() {
+        ctx.fillStyle = "#f9f9f9";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Grid
+        ctx.strokeStyle = "#ddd";
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= FIELD_SIZE; i += 12) {
+          const x = i * PIXELS_PER_INCH;
+          const y = i * PIXELS_PER_INCH;
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, canvas.height);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(canvas.width, y);
+          ctx.stroke();
+        }
+
+        // Trail
+        if (robot.trail.length > 1) {
+          ctx.strokeStyle = "rgba(102, 126, 234, 0.5)";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(robot.trail[0].x, robot.trail[0].y);
+          for (let i = 1; i < robot.trail.length; i++) {
+            ctx.lineTo(robot.trail[i].x, robot.trail[i].y);
+          }
+          ctx.stroke();
+        }
+
+        // Robot
+        const robotSize = 15;
+        ctx.fillStyle = "#667eea";
+        ctx.beginPath();
+        ctx.arc(robot.x, robot.y, robotSize, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Robot heading indicator
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 3;
+        const radians = ((robot.heading - 90) * Math.PI) / 180;
+        const headingLength = robotSize * 1.5;
+        ctx.beginPath();
+        ctx.moveTo(robot.x, robot.y);
+        ctx.lineTo(
+          robot.x + Math.cos(radians) * headingLength,
+          robot.y + Math.sin(radians) * headingLength,
+        );
+        ctx.stroke();
+
+        // Field boundary
+        ctx.strokeStyle = "#333";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(0, 0, canvas.width, canvas.height);
+      }
+
+      function animate(currentTime) {
+        if (!simulation.running || simulation.paused) {
+          requestAnimationFrame(animate);
+          return;
+        }
+
+        const deltaTime = 16; // ~60fps
+
+        if (simulation.currentCommandIndex < simulation.commands.length) {
+          const cmd = simulation.commands[simulation.currentCommandIndex];
+          cmd.active = true;
+
+          executeCommand(cmd, deltaTime);
+          simulation.elapsedTime += deltaTime;
+
+          // Check if command is complete
+          if (
+            simulation.elapsedTime >= cmd.timeout ||
+            (cmd.type === "delay" && simulation.elapsedTime >= cmd.duration)
+          ) {
+            cmd.completed = true;
+            cmd.active = false;
+            simulation.currentCommandIndex++;
+            simulation.elapsedTime = 0;
+            renderCommandList();
+          }
+        } else {
+          simulation.running = false;
+          startBtn.textContent = "▶ Start";
+        }
+
+        updateUI();
+        draw();
+        requestAnimationFrame(animate);
+      }
+
+      // Event listeners
+      startBtn.addEventListener("click", () => {
+        if (!simulation.running) {
+          simulation.running = true;
+          simulation.paused = false;
+          startBtn.textContent = "⏸ Pause";
+          pauseBtn.style.display = "block";
+          animate();
+        }
+      });
+
+      pauseBtn.addEventListener("click", () => {
+        simulation.paused = !simulation.paused;
+        pauseBtn.textContent = simulation.paused ? "▶ Resume" : "⏸ Pause";
+      });
+
+      resetBtn.addEventListener("click", () => {
+        loadAutonomous(parseInt(autonSelect.value));
+      });
+
+      speedSlider.addEventListener("input", (e) => {
+        simulation.speed = parseFloat(e.target.value);
+        speedValue.textContent = simulation.speed.toFixed(2) + "x";
+      });
+
+      autonSelect.addEventListener("change", (e) => {
+        loadAutonomous(parseInt(e.target.value));
+      });
+
+      // Initialize
+      loadAutonomous(1);
+      draw();
+    </script>
+  </body>
 </html>

@@ -6,6 +6,7 @@ void moveBackward(float distance_in, int timeout_ms);
 void turnLeft(int speed, int duration_ms);
 void turnRight(int speed, int duration_ms);
 void turnTo(float heading_deg, int timeout_ms);
+void turnByDegrees(float degrees, int timeout_ms);
 void autonMoveForward();
 
 #endif

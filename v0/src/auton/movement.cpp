@@ -87,3 +87,18 @@ void turnRight(int speed, int duration_ms) {
 	right_mg.move_velocity(0);
 }
 
+void turnByDegrees(float degrees, int timeout_ms) {
+	// Approximately 4.5ms per degree for 90 degree turn
+	// 90 deg / 1000ms = 0.09 deg/ms, so 1 deg ≈ 11.1ms
+	int duration_ms = std::abs(degrees) * 11.1;
+	if (duration_ms > timeout_ms) duration_ms = timeout_ms;
+	
+	if (degrees > 0) {
+		// Turn right
+		turnRight(90, duration_ms);
+	} else {
+		// Turn left
+		turnLeft(90, duration_ms);
+	}
+}
+

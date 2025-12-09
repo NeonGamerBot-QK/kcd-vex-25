@@ -91,9 +91,11 @@ void autonomous() {
 			break;
 		
 		case 1: // Red Right - Rush Center
-			moveForward(32, 1500); // Rush to Center Goal (~1.5 tiles)
-			intakeForward(); // Grab block
-			moveBackward(24, 1500); // Retreat
+			moveForward(32, 2000); // Move forward
+			pros::delay(3000); // Wait 3 seconds
+			moveBackward(6, 1500); // Go backwards a little
+			turnByDegrees(25, 1000); // Turn right 25 degrees
+			moveForward(24, 2000); // Go forward for 2 seconds worth of distance
 			break;
 		
 		case 2: // Blue Left - Rush Center
@@ -115,13 +117,17 @@ void autonomous() {
 			break;
 		
 		case 4: // Skills Run
-			moveForward(12, 1000); // Score Alliance
-			moveBackward(12, 1000);
+			moveForward(32, 2000); // Move forward
+			pros::delay(3000); // Wait 3 seconds
+			moveBackward(6, 1500); // Go backwards a little
+			turnByDegrees(25, 1000); // Turn right 25 degrees
+			moveForward(24, 2000); // Go forward for 2 seconds worth of distance
+			turnByDegrees(-25, 1000); // Turn left 25 degrees to original heading
+			moveForward(64, 4000); // Move forward to end
 			turnRight(90, 1000);
-			moveForward(48, 2000); // Cross field
-			turnLeft(90, 1000);
-			moveForward(24, 1500); // Push into goal
-			moveBackward(24, 1500);
+			moveForward(10, 1500);
+			turnRight(90, 1000);
+			moveBackward(10, 1500);
 			break;
 		
 		case 5: // Do Nothing

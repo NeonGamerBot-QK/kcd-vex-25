@@ -3,6 +3,7 @@
 
 #include "screen/init.hpp"
 #include "auton/movement.hpp"
+#include "auton/skills.hpp"
 #include "intake/main.hpp"
 #include "outtake/main.hpp"
 #include "globals.hpp"
@@ -117,17 +118,7 @@ void autonomous() {
 			break;
 		
 		case 4: // Skills Run
-			moveForward(32, 2000); // Move forward
-			pros::delay(3000); // Wait 3 seconds
-			moveBackward(6, 1500); // Go backwards a little
-			turnByDegrees(25, 1000); // Turn right 25 degrees
-			moveForward(24, 2000); // Go forward for 2 seconds worth of distance
-			turnByDegrees(-25, 1000); // Turn left 25 degrees to original heading
-			moveForward(64, 4000); // Move forward to end
-			turnRight(90, 1000);
-			moveForward(10, 1500);
-			turnRight(90, 1000);
-			moveBackward(10, 1500);
+			autonomousSkills();
 			break;
 		
 		case 5: // Do Nothing

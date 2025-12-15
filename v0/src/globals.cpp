@@ -7,6 +7,7 @@ pros::Motor intakeMotor(PORT_INTAKE);
 pros::Motor intakeMotor2(PORT_INTAKE2);
 pros::Motor intakeMotor3(PORT_INTAKE3);
 pros::Motor outtakeMotor(PORT_OUTTAKE);
+pros::Motor outtakeMotor2(PORT_OUTTAKE2);
 pros::Optical colorSensor(PORT_COLOR_OPTICAL);
 pros::Motor strafeMotor(PORT_STRAFE)
 // Drivetrain Settings

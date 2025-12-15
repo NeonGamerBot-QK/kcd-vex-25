@@ -16,6 +16,7 @@ constexpr int PORT_INTAKE = 6; // bottom
 constexpr int PORT_INTAKE2 = 7;
 constexpr int PORT_INTAKE3 = 2;
 constexpr int PORT_OUTTAKE = 11;
+constexpr int PORT_OUTTAKE2 = 12;
 constexpr int PORT_COLOR_OPTICAL = 19;
 constexpr int PORT_STRAFE = 67; // todo: change lol
 // Config
@@ -27,6 +28,7 @@ extern pros::Motor intakeMotor;
 extern pros::Motor intakeMotor2;
 extern pros::Motor intakeMotor3;
 extern pros::Motor outtakeMotor;
+extern pros::Motor outtakeMotor2;
 extern pros::Optical colorSensor;
 extern pros::Motor strafeMotor;
 

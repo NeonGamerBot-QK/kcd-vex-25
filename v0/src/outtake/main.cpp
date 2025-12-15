@@ -16,15 +16,18 @@ void setOuttakePiston(bool state) {
     outtakePiston.set_value(state);
 }
 
-// Motor (Port 8)
+// Motors (Port 11 and 12) - Both motors synchronized
 void outtakeForward() {
-    outtakeMotor.move(127);
+	outtakeMotor.move(127);
+	outtakeMotor2.move(127);
 }
 
 void outtakeBackward() {
-    outtakeMotor.move(-127);
+	outtakeMotor.move(-127);
+	outtakeMotor2.move(-127);
 }
 
 void outtakeStop() {
-    outtakeMotor.move(0);
+	outtakeMotor.move(0);
+	outtakeMotor2.move(0);
 }

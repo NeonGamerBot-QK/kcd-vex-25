@@ -147,7 +147,7 @@ void opcontrol() {
 
 	while (true) {
 		int dir = master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
-		int turn = -master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
+		int turn = master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
 		int strafe = master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X);
 		chassis.arcade(dir, turn);
 		strafeMotor.move(strafe);

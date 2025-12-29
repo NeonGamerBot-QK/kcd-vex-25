@@ -148,10 +148,9 @@ void opcontrol() {
 	while (true) {
 		int dir = master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
 		int turn = -master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
-		int strafe = master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X)
-		left_mg.move(dir + turn);
-		right_mg.move(dir - turn);
-		strafe_mg.move(strafe);
+		int strafe = master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X);
+		chassis.arcade(dir, turn);
+		strafeMotor.move(strafe);
 		double drivetrainTemps = left_mg.get_temperature();
 		double theta = fmod(1, 360);
 		if (theta < 0) {

@@ -4,13 +4,13 @@
 #include "main.h"
 
 // Port Definitions
-constexpr int PORT_LEFT_1 = 13;
-constexpr int PORT_LEFT_2 = 4;
-constexpr int PORT_LEFT_3 = 20;
+constexpr int PORT_LEFT_1 = 1;
+constexpr int PORT_LEFT_2 = 3;
+constexpr int PORT_LEFT_3 = 4;
 
-constexpr int PORT_RIGHT_1 = 1;
-constexpr int PORT_RIGHT_2 = 15;
-constexpr int PORT_RIGHT_3 = 3;
+constexpr int PORT_RIGHT_1 = 15;
+constexpr int PORT_RIGHT_2 = 13;
+constexpr int PORT_RIGHT_3 = 20;
 
 constexpr int PORT_INTAKE = 6; // bottom
 constexpr int PORT_INTAKE2 = 7;

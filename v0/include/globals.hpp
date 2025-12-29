@@ -6,7 +6,7 @@
 // Port Definitions
 constexpr int PORT_LEFT_1 = 13;
 constexpr int PORT_LEFT_2 = 4;
-constexpr int PORT_LEFT_3 = 10;
+constexpr int PORT_LEFT_3 = 20;
 
 constexpr int PORT_RIGHT_1 = 1;
 constexpr int PORT_RIGHT_2 = 15;
@@ -19,7 +19,7 @@ constexpr int PORT_OUTTAKE = 11;
 constexpr int PORT_OUTTAKE2 = 12;
 constexpr int PORT_COLOR_OPTICAL = 19;
 constexpr int PORT_STRAFE = 67; // todo: change lol
-constexpr int PORT_IMU = 20;
+constexpr int PORT_IMU = 19;
 // Config
 #define SHOW_COLOR_ON_SCREEN 1
 

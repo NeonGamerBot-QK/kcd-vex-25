@@ -61,9 +61,9 @@ void moveForward(float distance_in, int timeout_ms) {
 		
 		float correction = heading_error * kP_heading;
 		
-		// Apply correction: if drifting right, slow right side (or speed up left)
-		left_mg.move(speed - correction);
-		right_mg.move(speed + correction);
+		// Apply correction: if drifting right, speed up left / slow right
+		left_mg.move(speed + correction);
+		right_mg.move(speed - correction);
 		
 		pros::delay(10);
 	}
@@ -84,18 +84,18 @@ void turnTo(float heading_deg, int timeout_ms) {
 	// Disabled chassis use
 }
 
-// Legacy wrappers
+// Legacy wrappers - turnLeft spins robot counterclockwise, turnRight clockwise
 void turnLeft(int speed, int duration_ms) {
-	left_mg.move_velocity(speed * 4.5);
-	right_mg.move_velocity(-speed * 4.5);
+	left_mg.move_velocity(-speed * 4.5);
+	right_mg.move_velocity(speed * 4.5);
 	pros::delay(duration_ms);
 	left_mg.move_velocity(0);
 	right_mg.move_velocity(0);
 }
 
 void turnRight(int speed, int duration_ms) {
-	left_mg.move_velocity(-speed * 4.5);
-	right_mg.move_velocity(speed * 4.5);
+	left_mg.move_velocity(speed * 4.5);
+	right_mg.move_velocity(-speed * 4.5);
 	pros::delay(duration_ms);
 	left_mg.move_velocity(0);
 	right_mg.move_velocity(0);

@@ -140,6 +140,20 @@ void screen_deinit() {
 	rd_view_del(homeview);
 }
 
+// Forward declaration for autonomous function
+void autonomous();
+
+// Callback for the "Run Auton" button
+static void run_auton_btn_cb(lv_event_t *e) {
+	// Only run if not connected to competition control
+	if (!pros::competition::is_connected()) {
+		// Run autonomous in a separate task to avoid blocking the UI
+		pros::Task auton_task([]() {
+			autonomous();
+		}, "Auton Test");
+	}
+}
+
 void init_homeview() {
 	stat_label = lv_label_create(rd_view_obj(homeview));
 	lv_label_set_text(stat_label, "Ready");
@@ -151,6 +165,16 @@ void init_homeview() {
 	position_label = lv_label_create(rd_view_obj(homeview));
 	lv_label_set_text(position_label, "X:0 Y:0 H:0");
 	lv_obj_align(position_label, LV_ALIGN_LEFT_MID, 10, 30);
+	
+	// "Run Auton" button for testing when not in competition
+	lv_obj_t *auton_btn = lv_btn_create(rd_view_obj(homeview));
+	lv_obj_set_size(auton_btn, 100, 40);
+	lv_obj_align(auton_btn, LV_ALIGN_BOTTOM_LEFT, 10, -10);
+	lv_obj_add_event_cb(auton_btn, run_auton_btn_cb, LV_EVENT_CLICKED, nullptr);
+	
+	lv_obj_t *auton_btn_lbl = lv_label_create(auton_btn);
+	lv_label_set_text(auton_btn_lbl, "Run Auton");
+	lv_obj_center(auton_btn_lbl);
 	
 	static pros::Task stats_task(update_stats_task, nullptr, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "Stats");
 }

@@ -186,10 +186,10 @@ void opcontrol() {
 		if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)) {
 			telemToggle = !telemToggle; // Toggle telemetry display
 		}
-		// if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_DOWN) && !pros::competition::is_connected()) {
-		// 	master.rumble("- -");
-		// 	autonomous();
-		// }
+		if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_DOWN) && !pros::competition::is_connected()) {
+			master.rumble("- -");
+			autonomous();
+		}
 		
 		if (!motor_err) {
 			

@@ -32,7 +32,7 @@ extern pros::Motor outtakeMotor;
 extern pros::Motor outtakeMotor2;
 extern pros::Optical colorSensor;
 extern pros::Motor strafeMotor;
-
+extern pros::Imu imu;
 
 // LemLib Chassis
 #include "lemlib/api.hpp"

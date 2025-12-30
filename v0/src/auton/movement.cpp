@@ -19,16 +19,19 @@ void moveForward(float distance_in, int timeout_ms) {
 	float ticks_per_inch = (360.0 / (WHEEL_DIAM * M_PI)) * GEAR_RATIO;
 	float target_ticks = distance_in * ticks_per_inch;
 	
-	printf("MoveFwd: Dist=%.1f Target=%.1f\n", distance_in, target_ticks);
+	// Store initial heading for correction
+	float initial_heading = imu.get_heading();
+	
+	printf("MoveFwd: Dist=%.1f Target=%.1f InitHead=%.1f\n", distance_in, target_ticks, initial_heading);
 	
 	long start_time = pros::millis();
 	
 	// P-Loop constants
-	float kP = 2.0; // Tuning value: higher = faster/oscillates, lower = smoother
+	float kP = 2.0; // Distance P-gain
+	float kP_heading = 3.0; // Heading correction P-gain (tune this)
 	
 	while (true) {
 		// Get average position
-		// Note: PROS MotorGroup get_position returns average
 		double current_pos = (left_mg.get_position() + right_mg.get_position()) / 2.0;
 		
 		float error = target_ticks - current_pos;
@@ -38,7 +41,7 @@ void moveForward(float distance_in, int timeout_ms) {
 			break;
 		}
 		
-		// Calculate speed
+		// Calculate base speed from distance error
 		float speed = error * kP;
 		
 		// Cap speed to max +/- 127
@@ -48,8 +51,19 @@ void moveForward(float distance_in, int timeout_ms) {
 		// Min speed to overcome friction
 		if (std::abs(speed) < 20) speed = (speed > 0) ? 20 : -20;
 		
-		left_mg.move(speed);
-		right_mg.move(speed);
+		// Heading correction: keeps robot driving straight
+		float current_heading = imu.get_heading();
+		float heading_error = initial_heading - current_heading;
+		
+		// Normalize heading error to [-180, 180]
+		if (heading_error > 180) heading_error -= 360;
+		if (heading_error < -180) heading_error += 360;
+		
+		float correction = heading_error * kP_heading;
+		
+		// Apply correction: if drifting right, slow right side (or speed up left)
+		left_mg.move(speed - correction);
+		right_mg.move(speed + correction);
 		
 		pros::delay(10);
 	}

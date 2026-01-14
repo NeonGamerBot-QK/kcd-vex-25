@@ -147,7 +147,7 @@ void opcontrol() {
 
 	while (true) {
 		int dir = master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
-		int turn = master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
+		int turn = -master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
 		chassis.arcade(dir, turn);
 		double drivetrainTemps = left_mg.get_temperature();
 		double theta = fmod(1, 360);
@@ -180,6 +180,15 @@ void opcontrol() {
 		}
 		if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_X)) {
 			toggleIntakeMode();
+		}
+		
+		// Intake controls: R1 = forward, R2 = backward, release = stop
+		if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
+			intakeForward();
+		} else if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) {
+			intakeBackward();
+		} else {
+			intakeStop();
 		}
 		if(master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)) {
 			telemToggle = !telemToggle; // Toggle telemetry display

@@ -14,9 +14,10 @@ constexpr int PORT_RIGHT_1 = 4;
 constexpr int PORT_RIGHT_2 = 5;
 constexpr int PORT_RIGHT_3 = 11;
 
-constexpr int PORT_INTAKE = 6; // bottom
-constexpr int PORT_INTAKE2 = 7;
-constexpr int PORT_INTAKE3 = 2;
+// Intake motors (negative = reversed)
+constexpr int PORT_INTAKE = 1;
+constexpr int PORT_INTAKE2 = -9;
+constexpr int PORT_INTAKE3 = -21;
 constexpr int PORT_OUTTAKE = 11;
 constexpr int PORT_OUTTAKE2 = 12;
 constexpr int PORT_COLOR_OPTICAL = 19;

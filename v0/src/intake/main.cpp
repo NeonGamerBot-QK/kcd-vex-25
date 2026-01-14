@@ -62,7 +62,7 @@ void intake_task_fn(void* param) {
             }
             
         } else if (intake_state == -1) {
-            // Backward
+            // Backward - all negative
             intakeMotor.move(-127);
             intakeMotor2.move(-127);
             intakeMotor3.move(-127);
@@ -82,17 +82,16 @@ void intakeBackward() {
         pros::Task intakeTask(intake_task_fn, nullptr, "Intake Task");
         task_started = true;
     }
-    intake_state = 1;
+    intake_state = -1;
 }
 
 void intakeForward() {
-    // Ensure task is running (if called first)
     static bool task_started = false;
     if (!task_started) {
         pros::Task intakeTask(intake_task_fn, nullptr, "Intake Task");
         task_started = true;
     }
-    intake_state = -1;
+    intake_state = 1;
 }
 
 void intakeStop() {

@@ -4,13 +4,15 @@
 #include "main.h"
 
 // Port Definitions
-constexpr int PORT_LEFT_1 = 1;
-constexpr int PORT_LEFT_2 = 3;
-constexpr int PORT_LEFT_3 = 4;
+// Left side (top to bottom): 13, 14, 15
+constexpr int PORT_LEFT_1 = 13;
+constexpr int PORT_LEFT_2 = 14;
+constexpr int PORT_LEFT_3 = 15;
 
-constexpr int PORT_RIGHT_1 = 15;
-constexpr int PORT_RIGHT_2 = 13;
-constexpr int PORT_RIGHT_3 = 20;
+// Right side (top to bottom): 4, 5, 11
+constexpr int PORT_RIGHT_1 = 4;
+constexpr int PORT_RIGHT_2 = 5;
+constexpr int PORT_RIGHT_3 = 11;
 
 constexpr int PORT_INTAKE = 6; // bottom
 constexpr int PORT_INTAKE2 = 7;
@@ -19,7 +21,7 @@ constexpr int PORT_OUTTAKE = 11;
 constexpr int PORT_OUTTAKE2 = 12;
 constexpr int PORT_COLOR_OPTICAL = 19;
 constexpr int PORT_STRAFE = 67; // todo: change lol
-constexpr int PORT_IMU = 19;
+constexpr int PORT_IMU = 20;
 // Config
 #define SHOW_COLOR_ON_SCREEN 1
 

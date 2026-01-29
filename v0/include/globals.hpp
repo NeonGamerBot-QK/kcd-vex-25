@@ -22,7 +22,7 @@ constexpr int PORT_OUTTAKE = 11;
 constexpr int PORT_OUTTAKE2 = 12;
 constexpr int PORT_COLOR_OPTICAL = 19;
 constexpr int PORT_STRAFE = 67; // todo: change lol
-constexpr int PORT_IMU = 20;
+constexpr int PORT_IMU = 10;
 // Config
 #define SHOW_COLOR_ON_SCREEN 1
 

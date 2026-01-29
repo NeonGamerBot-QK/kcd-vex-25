@@ -16,7 +16,7 @@ static lv_obj_t *map_canvas = nullptr;
 static lv_obj_t *position_label = nullptr;
 static lv_obj_t *log_ta = nullptr;
 
-int selected_auton = 0;
+int selected_auton = 1;
 
 void screen_log(const char* fmt, ...) {
 	if (log_ta == nullptr) return;

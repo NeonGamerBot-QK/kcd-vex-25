@@ -49,6 +49,10 @@ void initialize() {
 	screen_init();
 	chassis.calibrate(); // Calibrate chassis sensors
 	
+	// Show [I] on controller to indicate IMU calibration complete
+	pros::Controller master(pros::E_CONTROLLER_MASTER);
+	master.print(0, 0, "[I] IMU Ready");
+	
 	// Start logging task
 	pros::Task logger(pid_log_task, nullptr, "PID Logger");
 	
@@ -91,12 +95,12 @@ void autonomous() {
 			// moveForward(24, 1500); // Touch ladder/bar
 			break;
 		
-		case 1: // Red Right - Rush Center
-			moveForward(32, 2000); // Move forward
-			pros::delay(3000); // Wait 3 seconds
-			moveBackward(6, 1500); // Go backwards a little
-			turnByDegrees(25, 1000); // Turn right 25 degrees
-			moveForward(24, 2000); // Go forward for 2 seconds worth of distance
+		case 1: // Red Right - Simple forward/intake/backup
+			moveForward(24, 2000);      // Drive forward 24 inches
+			intakeForward();            // Start intake
+			pros::delay(5000);          // Wait 5 seconds while intake runs
+			intakeStop();               // Stop intake before backing up
+			moveBackward(12, 2000);     // Back up 12 inches
 			break;
 		
 		case 2: // Blue Left - Rush Center
@@ -172,6 +176,7 @@ void opcontrol() {
 		if (!r1.is_installed()) { printf("R1 (%d) DC!\n", PORT_RIGHT_1); err_msg += "R1 "; motor_err = true; }
 		if (!r2.is_installed()) { printf("R2 (%d) DC!\n", PORT_RIGHT_2); err_msg += "R2 "; motor_err = true; }
 		if (!r3.is_installed()) { printf("R3 (%d) DC!\n", PORT_RIGHT_3); err_msg += "R3 "; motor_err = true; }
+		if (!imu.is_installed()) { printf("IMU (%d) DC!\n", PORT_IMU); err_msg += "IMU "; motor_err = true; }
 		
 		if (motor_err) {
 			master.print(0, 0, "%s", err_msg.c_str());

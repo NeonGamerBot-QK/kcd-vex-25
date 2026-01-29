@@ -82,17 +82,33 @@ void autonomous() {
 	
 	switch(auton) {
 		case 0: // Red Left - AWP
-			intakeBackward();
+			// Drive straight for 0.5s (15% slower)
+			chassis.arcade(108, 0);
+			pros::delay(600);
+			chassis.arcade(0, 0);
+			pros::delay(100);
+			// Turn right for 350ms (negative = right)
+			chassis.arcade(0, -60);
+			pros::delay(350);
+			chassis.arcade(0, 0);
+			
+			// Drive forward for 0.5s (15% slower)
+			chassis.arcade(108, 0);
 			pros::delay(500);
-			moveForward(1, 2000); 
+			chassis.arcade(0, 0);
 			
-			// // Score preload
-			// intakeForward();
-			// pros::delay(1000);
+			// Spin outtake
+			intakeBackward();
+			pros::delay(1500);
+			intakeStop();
 			
-			// moveBackward(36, 2000); // Back up to align
-			// turnRight(90, 1000);
-			// moveForward(24, 1500); // Touch ladder/bar
+			// Wait before backing up
+			pros::delay(500);
+			
+			// Back up for 0.2s
+			chassis.arcade(-127, 0);
+			pros::delay(200);
+			chassis.arcade(0, 0);
 			break;
 		
 		case 1: // Red Right - Simple forward/intake/backup

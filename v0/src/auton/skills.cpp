@@ -313,14 +313,94 @@ void autonomousSkills() {
 	// Reset odometry for consistent positioning
 	chassis.setPose({0, 0, 0});
 	
-	// Execute all three bridges
-	scoreBridge1();
-	scoreBridge2();
-	scoreBridge3();
-	
-	// Navigate to endgame and park
-	parkInEndgame();
-	
+	// === Run 1 ===
+	// Drive straight for 0.5s (15% slower)
+	chassis.arcade(108, 0);
+	pros::delay(620);
+	chassis.arcade(0, 0);
+	pros::delay(100);
+	// Turn right for 0.5s (negative = right)
+	chassis.arcade(0, -50);
+	pros::delay(500);
+	chassis.arcade(0, 0);
+	pros::delay(100);
+	// Drive forward for 0.5s (15% slower)
+	chassis.arcade(80, 0);
+	pros::delay(300);
+	chassis.arcade(0, 0);
+	// Spin outtake
+	intakeBackward();
+	pros::delay(5500);
+	intakeStop();
+	// Wait before backing up
+	pros::delay(500);
+
+	// === Run 2 ===
+	// Drive straight for 0.5s (15% slower)
+	chassis.arcade(108, 0);
+	pros::delay(620);
+	chassis.arcade(0, 0);
+	pros::delay(100);
+	// Turn right for 0.5s (negative = right)
+	chassis.arcade(0, -50);
+	pros::delay(500);
+	chassis.arcade(0, 0);
+	pros::delay(100);
+	// Drive forward for 0.5s (15% slower)
+	chassis.arcade(80, 0);
+	pros::delay(300);
+	chassis.arcade(0, 0);
+	// Spin outtake
+	intakeBackward();
+	pros::delay(5500);
+	intakeStop();
+	// Wait before backing up
+	pros::delay(500);
+
+	// === Run 3 ===
+	// Drive straight for 0.5s (15% slower)
+	chassis.arcade(108, 0);
+	pros::delay(620);
+	chassis.arcade(0, 0);
+	pros::delay(100);
+	// Turn right for 0.5s (negative = right)
+	chassis.arcade(0, -50);
+	pros::delay(500);
+	chassis.arcade(0, 0);
+	pros::delay(100);
+	// Drive forward for 0.5s (15% slower)
+	chassis.arcade(80, 0);
+	pros::delay(300);
+	chassis.arcade(0, 0);
+	// Spin outtake
+	intakeBackward();
+	pros::delay(5500);
+	intakeStop();
+	// Wait before backing up
+	pros::delay(500);
+
+	// === Run 4 ===
+	// Drive straight for 0.5s (15% slower)
+	chassis.arcade(108, 0);
+	pros::delay(620);
+	chassis.arcade(0, 0);
+	pros::delay(100);
+	// Turn right for 0.5s (negative = right)
+	chassis.arcade(0, -50);
+	pros::delay(500);
+	chassis.arcade(0, 0);
+	pros::delay(100);
+	// Drive forward for 0.5s (15% slower)
+	chassis.arcade(80, 0);
+	pros::delay(300);
+	chassis.arcade(0, 0);
+	// Spin outtake
+	intakeBackward();
+	pros::delay(5500);
+	intakeStop();
+	// Wait before backing up
+	pros::delay(500);
+
 	printf("\n╔════════════════════════════════════╗\n");
 	printf("║   SKILLS ROUTINE COMPLETE         ║\n");
 	printf("╚════════════════════════════════════╝\n");

@@ -8,6 +8,9 @@
 #include "outtake/main.hpp"
 #include "globals.hpp"
 
+// Declare path asset from static folder
+ASSET(testpath_txt);
+
 void startOdometryTask();
 
 const char* get_auton_name(int auton) {
@@ -18,6 +21,7 @@ const char* get_auton_name(int auton) {
 		case 3: return "Blue Right";
 		case 4: return "Skills";
 		case 5: return "None";
+		case 6: return "PID Test";
 		default: return "Unknown";
 	}
 }
@@ -142,6 +146,17 @@ void autonomous() {
 			break;
 		
 		case 5: // Do Nothing
+			break;
+		
+		case 6: // PID Test - pure pursuit path following
+			// Set starting pose to match path start (-20, 10)
+			chassis.setPose(-20, 10, 90);
+			
+			// Follow the path with 15" lookahead, timeout 15000ms
+			chassis.follow(testpath_txt, 15, 15000);
+			chassis.waitUntilDone();
+			break;
+		
 		default:
 			break;
 	}
